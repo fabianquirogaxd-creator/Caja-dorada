@@ -281,7 +281,7 @@ function entrar() {
   var key = (v + '_' + val + '_g' + g).replace(/[.#$[\]\/]/g, '_');
   rifaRef = db.ref('rifas/' + key);
 
-  document.getElementById('rifa-id-label').textContent = v + ' · $' + val + ' · Grupo #' + g;
+  document.getElementById('rifa-id-label').textContent = v + ' - $' + val + ' - Grupo #' + g;
   // Load loteria name from Firebase
   db.ref('config/loteria').once('value').then(function(snap) {
     if (snap.val()) {
