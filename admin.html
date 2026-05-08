@@ -417,17 +417,24 @@ function mostrarHistorialExport() {
   document.getElementById('export-paso1').style.display = 'none';
   document.getElementById('export-paso2').style.display = 'block';
   var lista = document.getElementById('export-dias-list');
-  lista.innerHTML = dias.map(function(dia) {
+  var diasHtml = '';
+  for (var d = 0; d < dias.length; d++) {
+    var dia = dias[d];
     var rifas = historialData[dia] || {};
-    var total = Object.keys(rifas).reduce(function(acc, k) {
-      return acc + Object.keys(rifas[k].numeros || {}).filter(function(n) { return n !== 'null'; }).length;
-    }, 0);
-    return '<button onclick="exportarExcel('' + dia + '')" style="display:block;width:100%;margin-bottom:6px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;font-size:13px;text-align:left;cursor:pointer;">' +
-      '<span style="font-weight:600;color:#00d4ff;">' + fechaLabel(dia) + '</span>' +
-      '<span style="float:right;font-size:11px;color:rgba(255,255,255,0.4);">' + Object.keys(rifas).length + ' rifas · ' + total + ' vendidos</span>' +
-      '</button>';
-  }).join('');
-}
+    var total = 0;
+    var rkeys = Object.keys(rifas);
+    for (var r = 0; r < rkeys.length; r++) {
+      var nks = Object.keys(rifas[rkeys[r]].numeros || {});
+      for (var n = 0; n < nks.length; n++) {
+        if (nks[n] !== 'null') total++;
+      }
+    }
+    var btn = document.createElement('button');
+    btn.style.cssText = 'display:block;width:100%;margin-bottom:6px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;font-size:13px;text-align:left;cursor:pointer;';
+    btn.innerHTML = '<span style="font-weight:600;color:#00d4ff;">' + fechaLabel(dia) + '</span><span style="float:right;font-size:11px;color:rgba(255,255,255,0.4);">' + rkeys.length + ' rifas - ' + total + ' vendidos</span>';
+    (function(d) { btn.onclick = function() { exportarExcel(d); }; })(dia);
+    lista.appendChild(btn);
+  }
 
 function exportarExcel(fuente) {
   cerrarExportModal();
