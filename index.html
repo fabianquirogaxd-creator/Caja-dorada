@@ -288,7 +288,10 @@ function entrar() {
   db.ref('config').once('value').then(function(snap) {
     var cfg = snap.val() || {};
     if (cfg.loteria) document.getElementById('loteria-nombre').textContent = cfg.loteria;
-    if (cfg.gridColor) document.getElementById('grid-wrap').style.background = cfg.gridColor;
+    if (cfg.gridColor) {
+      document.getElementById('screen-rifa').style.background = cfg.gridColor;
+      document.body.style.background = cfg.gridColor;
+    }
     if (cfg.gridCellColor) {
       var style = document.createElement('style');
       style.textContent = '.num-cell { background: ' + cfg.gridCellColor + ' !important; }';
@@ -297,7 +300,10 @@ function entrar() {
   });
   // Listen for color changes in real time
   db.ref('config/gridColor').on('value', function(snap) {
-    if (snap.val()) document.getElementById('grid-wrap').style.background = snap.val();
+    if (snap.val()) {
+      document.getElementById('screen-rifa').style.background = snap.val();
+      document.body.style.background = snap.val();
+    }
   });
   var p = PREMIOS[val] || PREMIOS['20k'];
   document.getElementById('disp-mayor').textContent = p.mayor;
@@ -478,20 +484,23 @@ function compartirWhatsApp() {
   var valor = document.getElementById('disp-valor').textContent;
   var rifaId = document.getElementById('rifa-id-label').textContent;
 
+  // Get current background color
+  var bgColor = document.getElementById('screen-rifa').style.background || '#0a1628';
+
   // Create off-screen card
   var card = document.createElement('div');
-  card.style.cssText = 'position:fixed;left:-9999px;top:0;width:380px;background:#0a1628;padding:16px;border-radius:12px;font-family:Arial,sans-serif;';
+  card.style.cssText = 'position:fixed;left:-9999px;top:0;width:380px;padding:16px;border-radius:12px;font-family:Arial,sans-serif;background:' + bgColor + ';';
 
   // Header
   var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-    '<div><div style="font-size:18px;font-weight:700;color:#f5c842;letter-spacing:2px;">CAJA DORADA</div>' +
-    '<div style="font-size:9px;color:rgba(245,200,66,0.6);letter-spacing:2px;text-transform:uppercase;">Ganadores todos los dias</div></div>' +
-    '<div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:#00d4ff;">' + loteria + '</div></div>' +
+    '<div><div style="font-size:14px;font-weight:700;color:#f5c842;letter-spacing:2px;">CAJA DORADA</div>' +
+    '<div style="font-size:8px;color:rgba(245,200,66,0.6);letter-spacing:2px;text-transform:uppercase;">Ganadores todos los dias</div></div>' +
+    '<div style="text-align:right;max-width:55%;"><div style="font-size:17px;font-weight:700;color:#00d4ff;line-height:1.2;word-wrap:break-word;">' + loteria + '</div></div>' +
     '</div>';
 
   // Premio mayor
   var premioMayor = '<div style="text-align:center;margin-bottom:8px;">' +
-    '<div style="font-size:11px;color:rgba(255,255,255,0.5);">PREMIO MAYOR</div>' +
+    '<div style="font-size:10px;color:rgba(255,255,255,0.45);">Premio Mayor - 2 ultimas cifras</div>' +
     '<div style="font-size:26px;font-weight:700;color:#00d4ff;">' + mayor + '</div>' +
     '<div style="font-size:11px;color:rgba(255,255,255,0.5);">Valor numero: ' + valor + '</div>' +
     '</div>';
@@ -499,7 +508,7 @@ function compartirWhatsApp() {
   // Premios menores
   var premiosMenores = '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
     '<div style="flex:1;background:rgba(255,255,255,0.07);border-radius:6px;padding:5px;text-align:center;">' +
-    '<div style="font-size:8px;color:rgba(255,255,255,0.45);">Dos primeras cifras</div>' +
+    '<div style="font-size:8px;color:rgba(255,255,255,0.45);">2 primeras cifras</div>' +
     '<div style="font-size:11px;font-weight:600;color:#00d4ff;">' + p1 + '</div></div>' +
     '<div style="flex:1;background:rgba(255,255,255,0.07);border-radius:6px;padding:5px;text-align:center;">' +
     '<div style="font-size:8px;color:rgba(255,255,255,0.45);">Cifras del medio</div>' +
@@ -509,18 +518,15 @@ function compartirWhatsApp() {
     '<div style="font-size:11px;font-weight:600;color:#00d4ff;">' + p3 + '</div></div>' +
     '</div>';
 
-  // Rifa ID
-  var rifaLabel = '';
-
   // Grid clone from DOM
   var gridClone = document.getElementById('grid-wrap').cloneNode(true);
   gridClone.style.cssText = 'background:#dde3ed;border-radius:8px;padding:4px;';
 
-  card.innerHTML = header + premioMayor + premiosMenores + rifaLabel;
+  card.innerHTML = header + premioMayor + premiosMenores;
   card.appendChild(gridClone);
   document.body.appendChild(card);
 
-  html2canvas(card, { scale: 2, backgroundColor: '#0a1628', useCORS: true, logging: false }).then(function(canvas) {
+  html2canvas(card, { scale: 2, backgroundColor: bgColor, useCORS: true, logging: false }).then(function(canvas) {
     document.body.removeChild(card);
     // Try Web Share API first (mobile)
     canvas.toBlob(function(blob) {
