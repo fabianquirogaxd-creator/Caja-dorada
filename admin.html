@@ -6,7 +6,7 @@
   <title>Caja Dorada - Admin</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #060e1a; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; padding: 1rem; }
+    body { background: #060e1a; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: #fff; padding: 1rem; }
     h1 { font-size: 20px; font-weight: 700; color: #00d4ff; margin-bottom: 2px; }
     .sub { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 1rem; }
     #sync-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 1rem; font-size: 12px; color: rgba(255,255,255,0.45); }
@@ -15,6 +15,10 @@
     #sync-dot.err { background: #f09595; }
     #sync-dot.loading { background: #f0c84a; animation: pulse 1s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    #loteria-bar { display: flex; gap: 8px; margin-bottom: 1rem; align-items: center; }
+    #loteria-bar label { font-size: 12px; color: rgba(255,255,255,0.5); white-space: nowrap; }
+    #inp-loteria { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; padding: 7px 10px; font-size: 13px; outline: none; }
+    #btn-loteria { padding: 7px 14px; border-radius: 8px; border: none; background: #00d4ff; color: #060e1a; font-size: 13px; font-weight: 600; cursor: pointer; }
     #main-tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
     .main-tab { padding: 7px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); font-size: 13px; cursor: pointer; }
     .main-tab.active { background: #00d4ff; color: #060e1a; border-color: #00d4ff; font-weight: 600; }
@@ -37,8 +41,11 @@
     td { padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: rgba(255,255,255,0.8); }
     tr:last-child td { border-bottom: none; }
     .num-col { font-weight: 700; color: #00d4ff; width: 50px; }
-    .badge-sold { display: inline-block; background: rgba(93,202,165,0.15); color: #5DCAA5; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    .badge-sold { display: inline-block; background: rgba(58,184,110,0.15); color: #3ab86e; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     .badge-free { display: inline-block; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.25); border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    .badge-fake { display: inline-block; background: rgba(212,160,23,0.15); color: #d4a017; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    .badge-pagado { display: inline-block; background: rgba(58,184,110,0.15); color: #3ab86e; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    .badge-pendiente { display: inline-block; background: rgba(232,200,58,0.15); color: #c8a010; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     .empty-state { text-align: center; padding: 2.5rem; color: rgba(255,255,255,0.3); font-size: 13px; }
     .hist-day { background: #0d1e35; border-radius: 10px; margin-bottom: 0.75rem; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
     .hist-day-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; }
@@ -55,6 +62,15 @@
     .m-btn { flex: 1; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 13px; border: none; font-weight: 600; }
     #mc-cancel { background: transparent; border: 1px solid #2a4a6a; color: #8ab4cc; }
     #mc-confirm { background: #8b1a1a; color: #fff; }
+    #export-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 200; }
+    #export-modal-bg.open { display: flex; }
+    #export-modal { background: #0d1e35; border: 1px solid #2a4a6a; border-radius: 14px; padding: 1.5rem; width: min(340px, 92vw); }
+    #export-modal h2 { font-size: 15px; font-weight: 600; color: #00d4ff; margin-bottom: 1rem; }
+    #export-modal p { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 1rem; }
+    .exp-btn { display: block; width: 100%; margin-bottom: 6px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #fff; font-size: 13px; text-align: left; cursor: pointer; }
+    .exp-btn-primary { border-color: #00d4ff; background: rgba(0,212,255,0.1); color: #00d4ff; font-weight: 600; }
+    .exp-btn-back { color: #8ab4cc; border-color: #2a4a6a; }
+    .exp-btn-cancel { color: rgba(255,255,255,0.35); border-color: #2a4a6a; background: transparent; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -67,43 +83,25 @@
   <span id="sync-text">Conectando...</span>
 </div>
 
-<div id="main-tabs">
-  <button class="main-tab active" id="tab-hoy" onclick="showTab('hoy')">Hoy</button>
-  <button class="main-tab" id="tab-hist" onclick="showTab('historial')">Historial (7 dias)</button>
+<div id="loteria-bar">
+  <label>Loteria del dia:</label>
+  <input type="text" id="inp-loteria" placeholder="Ej: Loteria de Manizales" />
+  <button id="btn-loteria">Guardar</button>
 </div>
 
-<div id="loteria-bar" style="display:flex;gap:8px;margin-bottom:1rem;align-items:center;">
-  <label style="font-size:12px;color:rgba(255,255,255,0.5);white-space:nowrap;">Loteria del dia:</label>
-  <input type="text" id="inp-loteria" placeholder="Ej: Loteria de Manizales" style="flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:7px 10px;font-size:13px;outline:none;" />
-  <button onclick="guardarLoteria()" style="padding:7px 14px;border-radius:8px;border:none;background:#00d4ff;color:#060e1a;font-size:13px;font-weight:600;cursor:pointer;">Guardar</button>
+<div id="main-tabs">
+  <button class="main-tab active" id="tab-hoy">Hoy</button>
+  <button class="main-tab" id="tab-hist">Historial (7 dias)</button>
 </div>
+
 <div id="action-bar">
-  <button class="action-btn" id="btn-export" onclick="abrirExportModal()">Exportar Excel</button>
-  <button class="action-btn" id="btn-reset-all" onclick="confirmarReset(null)">Resetear todo</button>
-  <button class="action-btn" id="btn-refresh" onclick="cargarDatos()">Actualizar</button>
+  <button class="action-btn" id="btn-export">Exportar Excel</button>
+  <button class="action-btn" id="btn-reset-all">Resetear todo</button>
+  <button class="action-btn" id="btn-refresh">Actualizar</button>
 </div>
 
 <div id="content">
   <div class="empty-state">Cargando datos...</div>
-</div>
-
-<div id="export-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:200;">
-  <div style="background:#0d1e35;border:1px solid #2a4a6a;border-radius:14px;padding:1.5rem;width:min(340px,92vw);">
-    <h2 style="font-size:15px;font-weight:600;color:#00d4ff;margin-bottom:1rem;">Exportar Excel</h2>
-    <div id="export-paso1">
-      <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:1rem;">¿Qué datos quieres exportar?</p>
-      <div style="display:flex;gap:8px;">
-        <button onclick="exportarExcel('hoy')" style="flex:1;padding:10px;border-radius:8px;border:1px solid #00d4ff;background:rgba(0,212,255,0.1);color:#00d4ff;font-size:13px;font-weight:600;cursor:pointer;">Hoy</button>
-        <button onclick="mostrarHistorialExport()" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);font-size:13px;font-weight:600;cursor:pointer;">Historial</button>
-      </div>
-    </div>
-    <div id="export-paso2" style="display:none;">
-      <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:10px;">Selecciona el dia a exportar:</p>
-      <div id="export-dias-list"></div>
-      <button onclick="volverPaso1()" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid #2a4a6a;background:transparent;color:#8ab4cc;font-size:12px;cursor:pointer;">Volver</button>
-    </div>
-    <button onclick="cerrarExportModal()" style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px solid #2a4a6a;background:transparent;color:rgba(255,255,255,0.35);font-size:12px;cursor:pointer;">Cancelar</button>
-  </div>
 </div>
 
 <div id="modal-bg">
@@ -111,9 +109,26 @@
     <h2 id="modal-title">Confirmar reseteo</h2>
     <p id="modal-msg"></p>
     <div id="modal-actions">
-      <button class="m-btn" id="mc-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="m-btn" id="mc-cancel">Cancelar</button>
       <button class="m-btn" id="mc-confirm">Si, resetear</button>
     </div>
+  </div>
+</div>
+
+<div id="export-modal-bg">
+  <div id="export-modal">
+    <h2>Exportar Excel</h2>
+    <div id="export-paso1">
+      <p>Que datos quieres exportar?</p>
+      <button class="exp-btn exp-btn-primary" id="exp-btn-hoy">Hoy</button>
+      <button class="exp-btn" id="exp-btn-hist">Historial</button>
+    </div>
+    <div id="export-paso2" style="display:none">
+      <p>Selecciona el dia a exportar:</p>
+      <div id="export-dias-list"></div>
+      <button class="exp-btn exp-btn-back" id="exp-btn-back">Volver</button>
+    </div>
+    <button class="exp-btn exp-btn-cancel" id="exp-btn-cancel">Cancelar</button>
   </div>
 </div>
 
@@ -159,28 +174,12 @@ function limpiarClave(k) {
   return k.replace(/[.#$[\]\/]/g, '_');
 }
 
-window.addEventListener('load', function() {
-  firebase.initializeApp({
-    apiKey: "AIzaSyDKdXXfrJaWa9rup7EbOVU_eIYq__8gZa8",
-    authDomain: "caja-dorada.firebaseapp.com",
-    databaseURL: "https://caja-dorada-default-rtdb.firebaseio.com",
-    projectId: "caja-dorada",
-    storageBucket: "caja-dorada.firebasestorage.app",
-    messagingSenderId: "218327954995",
-    appId: "1:218327954995:web:868569160171f2380c5546"
-  });
-  db = firebase.database();
-
-  db.ref('.info/connected').on('value', function(snap) {
-    if (snap.val()) {
-      setSyncStatus('ok', 'Conectado');
-    } else {
-      setSyncStatus('err', 'Sin conexion');
-    }
-  });
-
-  cargarDatos();
-});
+function valorDesdeKey(key) {
+  var parts = key.split('_');
+  var valStr = parts[1] || '0k';
+  var num = parseInt(valStr.replace('k', ''), 10);
+  return num * 1000;
+}
 
 function guardarLoteria() {
   var nombre = document.getElementById('inp-loteria').value.trim();
@@ -192,9 +191,6 @@ function guardarLoteria() {
 
 function cargarDatos() {
   setSyncStatus('loading', 'Cargando...');
-  db.ref('config/loteria').once('value').then(function(snap) {
-    if (snap.val()) document.getElementById('inp-loteria').value = snap.val();
-  });
   db.ref('rifas').once('value').then(function(snap) {
     allData = snap.val() || {};
     setSyncStatus('ok', 'Actualizado');
@@ -202,7 +198,6 @@ function cargarDatos() {
   }).catch(function() {
     setSyncStatus('err', 'Error al cargar');
   });
-
   db.ref('historial').once('value').then(function(snap) {
     historialData = snap.val() || {};
     if (tabActual === 'historial') renderHistorial();
@@ -228,20 +223,15 @@ function buildTabla(numeros) {
     var dato = numeros[i] || numeros[String(i)];
     var num = String(i).padStart(2, '0');
     if (dato) {
-      var pagado = dato.pago === 'pagado';
       var esFake = dato.tipo === 'fake';
-      var estadoBadge = esFake
-        ? '<span style="background:rgba(212,160,23,0.15);color:#d4a017;border-radius:4px;padding:2px 8px;font-size:11px">Fake</span>'
-        : '<span class="badge-sold">Vendido</span>';
-      var pagoBadge = esFake ? '-'
-        : pagado
-        ? '<span style="background:rgba(58,184,110,0.15);color:#3ab86e;border-radius:4px;padding:2px 8px;font-size:11px">Pagado</span>'
-        : '<span style="background:rgba(232,200,58,0.15);color:#c8a010;border-radius:4px;padding:2px 8px;font-size:11px">Sin pagar</span>';
+      var pagado = dato.pago === 'pagado';
+      var estadoHtml = esFake ? '<span class="badge-fake">Fake</span>' : '<span class="badge-sold">Vendido</span>';
+      var pagoHtml = esFake ? '-' : (pagado ? '<span class="badge-pagado">Pagado</span>' : '<span class="badge-pendiente">Sin pagar</span>');
       filas += '<tr><td class="num-col">' + num + '</td>';
-      filas += '<td>' + estadoBadge + '</td>';
-      filas += '<td>' + pagoBadge + '</td>';
-      filas += '<td>' + (dato.apodo || '-') + '</td>';
-      filas += '<td>' + (dato.tel || '-') + '</td>';
+      filas += '<td>' + estadoHtml + '</td>';
+      filas += '<td>' + pagoHtml + '</td>';
+      filas += '<td>' + (esFake ? '-' : (dato.apodo || '-')) + '</td>';
+      filas += '<td>' + (esFake ? '-' : (dato.tel || '-')) + '</td>';
       filas += '<td>' + tsToHora(dato.ts) + '</td></tr>';
     } else {
       filas += '<tr><td class="num-col">' + num + '</td>';
@@ -255,23 +245,19 @@ function buildTabla(numeros) {
 function renderTabHoy() {
   var content = document.getElementById('content');
   var keys = Object.keys(allData);
-
   if (keys.length === 0) {
     content.innerHTML = '<div class="empty-state">No hay rifas registradas hoy.</div>';
     return;
   }
-
   if (!vendedorActual || !allData[vendedorActual]) {
     vendedorActual = keys[0];
   }
-
-  var vendorTabs = '';
+  var tabsHtml = '';
   for (var i = 0; i < keys.length; i++) {
     var k = keys[i];
     var active = k === vendedorActual ? ' active' : '';
-    vendorTabs += '<button class="vendor-tab' + active + '" onclick="seleccionarVendedor(\'' + k + '\')">' + keyToLabel(k) + '</button>';
+    tabsHtml += '<button class="vendor-tab' + active + '" data-key="' + k + '">' + keyToLabel(k) + '</button>';
   }
-
   var key = vendedorActual;
   var numeros = (allData[key] && allData[key].numeros) ? allData[key].numeros : {};
   var vendidos = 0;
@@ -279,39 +265,45 @@ function renderTabHoy() {
   for (var j = 0; j < nkeys.length; j++) {
     if (nkeys[j] !== 'null') vendidos++;
   }
-
   content.innerHTML =
-    '<div class="vendor-tabs-wrap"><div class="vendor-tabs">' + vendorTabs + '</div></div>' +
+    '<div class="vendor-tabs-wrap"><div class="vendor-tabs" id="vendor-tabs-inner">' + tabsHtml + '</div></div>' +
     '<div class="rifa-block">' +
     '<div class="rifa-header">' +
     '<div><div class="rifa-name">' + keyToLabel(key) + '</div>' +
     '<div class="rifa-stats">' + vendidos + ' vendidos - ' + (100 - vendidos) + ' disponibles</div></div>' +
-    '<button class="btn-reset-one" onclick="confirmarReset(\'' + key + '\')">Resetear</button>' +
+    '<button class="btn-reset-one" data-reset="' + key + '">Resetear</button>' +
     '</div>' + buildTabla(numeros) + '</div>';
+
+  document.getElementById('vendor-tabs-inner').addEventListener('click', function(e) {
+    var btn = e.target.closest('.vendor-tab');
+    if (btn) seleccionarVendedor(btn.getAttribute('data-key'));
+  });
+  content.querySelector('.btn-reset-one').addEventListener('click', function() {
+    confirmarReset(this.getAttribute('data-reset'));
+  });
 }
 
 function renderHistorial() {
   var content = document.getElementById('content');
   var dias = Object.keys(historialData).sort().reverse().slice(0, 7);
-
   if (dias.length === 0) {
-    content.innerHTML = '<div class="empty-state">No hay historial aun.<br>El historial se guarda al resetear.</div>';
+    content.innerHTML = '<div class="empty-state">No hay historial aun. El historial se guarda al resetear.</div>';
     return;
   }
-
-  var html = '';
+  content.innerHTML = '';
   for (var d = 0; d < dias.length; d++) {
     var dia = dias[d];
     var rifas = historialData[dia] || {};
     var rkeys = Object.keys(rifas);
     var totalVendidos = 0;
     for (var r = 0; r < rkeys.length; r++) {
-      var nkeys2 = Object.keys((rifas[rkeys[r]].numeros || {}));
-      for (var n = 0; n < nkeys2.length; n++) {
-        if (nkeys2[n] !== 'null') totalVendidos++;
+      var nks = Object.keys(rifas[rkeys[r]].numeros || {});
+      for (var n = 0; n < nks.length; n++) {
+        if (nks[n] !== 'null') totalVendidos++;
       }
     }
-
+    var div = document.createElement('div');
+    div.className = 'hist-day';
     var rifasHtml = '';
     for (var r2 = 0; r2 < rkeys.length; r2++) {
       var rk = rkeys[r2];
@@ -321,38 +313,32 @@ function renderHistorial() {
       for (var n2 = 0; n2 < nk2.length; n2++) {
         if (nk2[n2] !== 'null') vendidos2++;
       }
-      rifasHtml +=
-        '<div class="rifa-block">' +
-        '<div class="rifa-header"><div>' +
-        '<div class="rifa-name">' + keyToLabel(rk) + '</div>' +
-        '<div class="rifa-stats">' + vendidos2 + ' vendidos - ' + (100 - vendidos2) + ' disponibles</div>' +
-        '</div></div>' + buildTabla(numeros2) + '</div>';
+      rifasHtml += '<div class="rifa-block">';
+      rifasHtml += '<div class="rifa-header"><div>';
+      rifasHtml += '<div class="rifa-name">' + keyToLabel(rk) + '</div>';
+      rifasHtml += '<div class="rifa-stats">' + vendidos2 + ' vendidos - ' + (100 - vendidos2) + ' disponibles</div>';
+      rifasHtml += '</div></div>' + buildTabla(numeros2) + '</div>';
     }
-
-    html +=
-      '<div class="hist-day">' +
-      '<div class="hist-day-header" onclick="toggleDia(\'' + dia + '\')">' +
+    div.innerHTML =
+      '<div class="hist-day-header" data-dia="' + dia + '">' +
       '<div><div class="hist-day-title">' + fechaLabel(dia) + '</div>' +
       '<div class="hist-day-sub">' + rkeys.length + ' rifas - ' + totalVendidos + ' numeros vendidos</div></div>' +
-      '<span style="color:rgba(255,255,255,0.3);font-size:16px">+</span>' +
-      '</div>' +
-      '<div class="hist-day-body" id="dia-' + dia + '">' + rifasHtml + '</div>' +
-      '</div>';
+      '<span style="color:rgba(255,255,255,0.3)">+</span></div>' +
+      '<div class="hist-day-body" id="dia-' + dia + '">' + rifasHtml + '</div>';
+    div.querySelector('.hist-day-header').addEventListener('click', function() {
+      var dia2 = this.getAttribute('data-dia');
+      document.getElementById('dia-' + dia2).classList.toggle('open');
+    });
+    content.appendChild(div);
   }
-  content.innerHTML = html;
-}
-
-function toggleDia(dia) {
-  document.getElementById('dia-' + dia).classList.toggle('open');
 }
 
 function confirmarReset(key) {
   resetKey = key;
   document.getElementById('modal-title').textContent = key ? 'Resetear rifa' : 'Resetear todo';
   document.getElementById('modal-msg').textContent = key
-    ? 'Borrar todos los numeros de "' + keyToLabel(key) + '"? Se guardara en el historial.'
+    ? 'Borrar todos los numeros de ' + keyToLabel(key) + '? Se guardara en el historial.'
     : 'Borrar TODAS las rifas de hoy? Se guardaran en el historial.';
-  document.getElementById('mc-confirm').onclick = ejecutarReset;
   document.getElementById('modal-bg').classList.add('open');
 }
 
@@ -386,65 +372,51 @@ function ejecutarReset() {
   }
 }
 
-function valorDesdeKey(key) {
-  var parts = key.split('_');
-  var valStr = parts[1] || '0k';
-  var num = parseInt(valStr.replace('k', ''), 10);
-  return num * 1000;
-}
-
 function abrirExportModal() {
-  document.getElementById('export-modal-bg').style.display = 'flex';
   document.getElementById('export-paso1').style.display = 'block';
   document.getElementById('export-paso2').style.display = 'none';
+  document.getElementById('export-modal-bg').classList.add('open');
 }
 
 function cerrarExportModal() {
-  document.getElementById('export-modal-bg').style.display = 'none';
-}
-
-function volverPaso1() {
-  document.getElementById('export-paso1').style.display = 'block';
-  document.getElementById('export-paso2').style.display = 'none';
+  document.getElementById('export-modal-bg').classList.remove('open');
 }
 
 function mostrarHistorialExport() {
   var dias = Object.keys(historialData).sort().reverse().slice(0, 7);
-  if (dias.length === 0) {
-    alert('No hay historial guardado aun.');
-    return;
-  }
+  if (dias.length === 0) { alert('No hay historial guardado aun.'); return; }
   document.getElementById('export-paso1').style.display = 'none';
   document.getElementById('export-paso2').style.display = 'block';
   var lista = document.getElementById('export-dias-list');
-  var diasHtml = '';
+  lista.innerHTML = '';
   for (var d = 0; d < dias.length; d++) {
     var dia = dias[d];
     var rifas = historialData[dia] || {};
-    var total = 0;
     var rkeys = Object.keys(rifas);
-    for (var r = 0; r < rkeys.length; r++) {
-      var nks = Object.keys(rifas[rkeys[r]].numeros || {});
-      for (var n = 0; n < nks.length; n++) {
-        if (nks[n] !== 'null') total++;
-      }
-    }
     var btn = document.createElement('button');
-    btn.style.cssText = 'display:block;width:100%;margin-bottom:6px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;font-size:13px;text-align:left;cursor:pointer;';
-    btn.innerHTML = '<span style="font-weight:600;color:#00d4ff;">' + fechaLabel(dia) + '</span><span style="float:right;font-size:11px;color:rgba(255,255,255,0.4);">' + rkeys.length + ' rifas - ' + total + ' vendidos</span>';
-    (function(d) { btn.onclick = function() { exportarExcel(d); }; })(dia);
+    btn.className = 'exp-btn';
+    var span1 = document.createElement('span');
+    span1.style.fontWeight = '600';
+    span1.style.color = '#00d4ff';
+    span1.textContent = fechaLabel(dia);
+    var span2 = document.createElement('span');
+    span2.style.cssText = 'float:right;font-size:11px;color:rgba(255,255,255,0.4)';
+    span2.textContent = rkeys.length + ' rifas';
+    btn.appendChild(span1);
+    btn.appendChild(span2);
+    (function(d2) { btn.onclick = function() { exportarExcel(d2); }; })(dia);
     lista.appendChild(btn);
   }
+}
 
 function exportarExcel(fuente) {
   cerrarExportModal();
-  var datos;
-  var nombreArchivo;
+  var datos, nombreArchivo;
   if (fuente === 'hoy') {
     datos = allData;
     nombreArchivo = 'CajaDorada_Hoy_' + fechaHoy().replace(/-/g, '') + '.xlsx';
   } else {
-    datos = (historialData[fuente] || {});
+    datos = historialData[fuente] || {};
     nombreArchivo = 'CajaDorada_' + fuente.replace(/-/g, '') + '.xlsx';
   }
   var keys = Object.keys(datos);
@@ -464,11 +436,7 @@ function exportarExcel(fuente) {
         var pagado = dato.pago === 'pagado';
         var valor = (!esFake && pagado) ? valorNum : 0;
         total += valor;
-        var estado = esFake ? 'Fake' : 'Vendido';
-        var pagoStr = esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar');
-        var apodo = esFake ? '-' : (dato.apodo || '');
-        var tel = esFake ? '-' : (dato.tel || '');
-        rows.push([num, estado, pagoStr, apodo, tel, tsToHora(dato.ts), valor]);
+        rows.push([num, esFake ? 'Fake' : 'Vendido', esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar'), esFake ? '-' : (dato.apodo || ''), esFake ? '-' : (dato.tel || ''), tsToHora(dato.ts), valor]);
       } else {
         rows.push([num, 'Libre', '', '', '', '', 0]);
       }
@@ -481,8 +449,49 @@ function exportarExcel(fuente) {
   XLSX.writeFile(wb, nombreArchivo);
 }
 
-document.getElementById('modal-bg').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
+window.addEventListener('load', function() {
+  firebase.initializeApp({
+    apiKey: "AIzaSyDKdXXfrJaWa9rup7EbOVU_eIYq__8gZa8",
+    authDomain: "caja-dorada.firebaseapp.com",
+    databaseURL: "https://caja-dorada-default-rtdb.firebaseio.com",
+    projectId: "caja-dorada",
+    storageBucket: "caja-dorada.firebasestorage.app",
+    messagingSenderId: "218327954995",
+    appId: "1:218327954995:web:868569160171f2380c5546"
+  });
+  db = firebase.database();
+
+  db.ref('.info/connected').on('value', function(snap) {
+    setSyncStatus(snap.val() ? 'ok' : 'err', snap.val() ? 'Conectado' : 'Sin conexion');
+  });
+
+  db.ref('config/loteria').once('value').then(function(snap) {
+    if (snap.val()) document.getElementById('inp-loteria').value = snap.val();
+  });
+
+  cargarDatos();
+
+  document.getElementById('tab-hoy').onclick = function() { showTab('hoy'); };
+  document.getElementById('tab-hist').onclick = function() { showTab('historial'); };
+  document.getElementById('btn-export').onclick = abrirExportModal;
+  document.getElementById('btn-reset-all').onclick = function() { confirmarReset(null); };
+  document.getElementById('btn-refresh').onclick = cargarDatos;
+  document.getElementById('btn-loteria').onclick = guardarLoteria;
+  document.getElementById('mc-cancel').onclick = closeModal;
+  document.getElementById('mc-confirm').onclick = ejecutarReset;
+  document.getElementById('exp-btn-hoy').onclick = function() { exportarExcel('hoy'); };
+  document.getElementById('exp-btn-hist').onclick = mostrarHistorialExport;
+  document.getElementById('exp-btn-back').onclick = function() {
+    document.getElementById('export-paso1').style.display = 'block';
+    document.getElementById('export-paso2').style.display = 'none';
+  };
+  document.getElementById('exp-btn-cancel').onclick = cerrarExportModal;
+  document.getElementById('modal-bg').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById('export-modal-bg').addEventListener('click', function(e) {
+    if (e.target === this) cerrarExportModal();
+  });
 });
 </script>
 </body>
