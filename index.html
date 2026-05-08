@@ -35,7 +35,7 @@
     .stat-label { font-size: 10px; color: rgba(255,255,255,0.45); }
     .stat-val { font-size: 20px; font-weight: 600; color: #fff; }
 
-    #grid-wrap { background: #dde3ed; border-radius: 10px; padding: 4px; }
+    #grid-wrap { background: #dde3ed; border-radius: 10px; padding: 4px; transition: background 0.5s; }
     #grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
     .num-cell {
       aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
@@ -77,10 +77,10 @@
     #cfg-apply { width: 100%; margin-top: 10px; background: #d4a017; border: none; border-radius: 8px; color: #0a1628; font-weight: 700; font-size: 13px; padding: 9px; cursor: pointer; }
     #top-logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     #logo-left { flex-shrink: 0; }
-    #logo-texto { font-size: 18px; font-weight: 700; color: #f5c842; letter-spacing: 2px; font-family: Georgia, serif; line-height: 1.1; }
-    #logo-sub { font-size: 9px; color: rgba(245,200,66,0.6); letter-spacing: 2px; text-transform: uppercase; }
-    #logo-right { text-align: right; }
-    #loteria-nombre { font-size: 14px; font-weight: 700; color: #00d4ff; line-height: 1.2; }
+    #logo-texto { font-size: 14px; font-weight: 700; color: #f5c842; letter-spacing: 2px; font-family: Georgia, serif; line-height: 1.1; }
+    #logo-sub { font-size: 8px; color: rgba(245,200,66,0.6); letter-spacing: 2px; text-transform: uppercase; }
+    #logo-right { text-align: right; max-width: 55%; }
+    #loteria-nombre { font-size: 17px; font-weight: 700; color: #00d4ff; line-height: 1.2; word-wrap: break-word; }
     #loteria-sub { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
     #btn-whatsapp { display: block; width: 100%; margin-top: 8px; background: #25D366; border: none; border-radius: 10px; color: #fff; font-weight: 700; font-size: 14px; padding: 11px; cursor: pointer; }
     #btn-whatsapp:active { background: #1da851; }
@@ -134,10 +134,11 @@
       <div id="prev-mayor" style="font-size:12px;color:#00d4ff;font-weight:600;margin-bottom:4px;">Mayor: $1'000.000</div>
       <div style="display:flex;gap:8px;font-size:11px;color:rgba(255,255,255,0.5);">
         <span id="prev-p1">$100.000</span>
-        <span>·</span>
+        <span>-</span>
         <span id="prev-p2">$100.000</span>
-        <span>·</span>
+        <span>-</span>
         <span id="prev-p3">$100.000</span>
+        <span>-</span>
       </div>
     </div>
     <label class="field-label">Numero de grupo (#)</label>
@@ -159,10 +160,11 @@
         </div>
       </div>
       <div class="rifa-id" id="rifa-id-label"></div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:2px;">Premio Mayor - 2 ultimas cifras</div>
       <div class="monto-mayor" id="disp-mayor">$1'000.000</div>
     </div>
     <div class="premios-row">
-      <div class="pm"><div class="pm-label">Dos primeras cifras</div><div class="pm-val" id="disp-p1">$100.000</div></div>
+      <div class="pm"><div class="pm-label">2 primeras cifras</div><div class="pm-val" id="disp-p1">$100.000</div></div>
       <div class="pm"><div class="pm-label">Cifras del medio</div><div class="pm-val" id="disp-p2">$100.000</div></div>
       <div class="pm"><div class="pm-label">1ra y ultima cifra</div><div class="pm-val" id="disp-p3">$100.000</div></div>
     </div>
@@ -239,10 +241,10 @@ var CHEST_PAGADO = '<svg viewBox="0 0 40 34" width="30" height="26" xmlns="http:
 var CHEST_PENDIENTE = '<svg viewBox="0 0 40 34" width="30" height="26" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="17" width="34" height="15" rx="2.5" fill="#b89010"/><rect x="3" y="17" width="34" height="6" rx="1" fill="#d4aa20"/><path d="M3 16 Q3 4 5 4 H35 Q37 4 37 16 Q37 10 20 10 Q3 10 3 16Z" fill="#f0cc40"/><rect x="3" y="4" width="34" height="12" rx="2.5" fill="#d4aa20"/><rect x="15" y="14" width="10" height="8" rx="2" fill="#7a6008"/><circle cx="20" cy="18" r="1.5" fill="#fff5a0"/><circle cx="9" cy="24" r="2" fill="#fff5a0" opacity="0.9"/><circle cx="31" cy="25" r="1.8" fill="#fff5a0" opacity="0.85"/></svg>';
 
 var PREMIOS = {
-  '5k':  { mayor: "$250.000",   p1: "$25.000",  p2: "$25.000",  p3: "$25.000"  },
-  '10k': { mayor: "$500.000",   p1: "$50.000",  p2: "$50.000",  p3: "$50.000"  },
-  '20k': { mayor: "$1'000.000", p1: "$100.000", p2: "$100.000", p3: "$100.000" },
-  '50k': { mayor: "$2'500.000", p1: "$250.000", p2: "$250.000", p3: "$250.000" }
+  '5k':  { mayor: "$250.000",   p1: "$25.000",  p2: "$25.000",  p3: "$25.000",  p4: "$25.000"  },
+  '10k': { mayor: "$500.000",   p1: "$50.000",  p2: "$50.000",  p3: "$50.000",  p4: "$50.000"  },
+  '20k': { mayor: "$1000.000",  p1: "$100.000", p2: "$100.000", p3: "$100.000" },
+  '50k': { mayor: "$2500.000",  p1: "$250.000", p2: "$250.000", p3: "$250.000" }
 };
 
 var db, rifaRef, selectedNum, pagoEstado, esEdicion;
@@ -282,11 +284,20 @@ function entrar() {
   rifaRef = db.ref('rifas/' + key);
 
   document.getElementById('rifa-id-label').textContent = v + ' - $' + val + ' - Grupo #' + g;
-  // Load loteria name from Firebase
-  db.ref('config/loteria').once('value').then(function(snap) {
-    if (snap.val()) {
-      document.getElementById('loteria-nombre').textContent = snap.val();
+  // Load config from Firebase
+  db.ref('config').once('value').then(function(snap) {
+    var cfg = snap.val() || {};
+    if (cfg.loteria) document.getElementById('loteria-nombre').textContent = cfg.loteria;
+    if (cfg.gridColor) document.getElementById('grid-wrap').style.background = cfg.gridColor;
+    if (cfg.gridCellColor) {
+      var style = document.createElement('style');
+      style.textContent = '.num-cell { background: ' + cfg.gridCellColor + ' !important; }';
+      document.head.appendChild(style);
     }
+  });
+  // Listen for color changes in real time
+  db.ref('config/gridColor').on('value', function(snap) {
+    if (snap.val()) document.getElementById('grid-wrap').style.background = snap.val();
   });
   var p = PREMIOS[val] || PREMIOS['20k'];
   document.getElementById('disp-mayor').textContent = p.mayor;
@@ -499,7 +510,7 @@ function compartirWhatsApp() {
     '</div>';
 
   // Rifa ID
-  var rifaLabel = '<div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px;">' + rifaId + '</div>';
+  var rifaLabel = '';
 
   // Grid clone from DOM
   var gridClone = document.getElementById('grid-wrap').cloneNode(true);
