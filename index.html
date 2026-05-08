@@ -644,17 +644,21 @@ function compartirWhatsApp() {
   var acento = rifaEl.getAttribute('data-acento') || '#00d4ff';
   var secundario = rifaEl.getAttribute('data-secundario') || '#f5c842';
 
-  var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
-    '<div><div style="font-size:14px;font-weight:700;color:' + secundario + ';letter-spacing:2px;">CAJA DORADA</div>' +
+  var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+    '<div style="flex-shrink:0;"><div style="font-size:14px;font-weight:700;color:' + secundario + ';letter-spacing:2px;">CAJA DORADA</div>' +
     '<div style="font-size:8px;color:' + secundario + ';opacity:0.6;letter-spacing:2px;text-transform:uppercase;">Ganadores todos los dias</div></div>' +
-    '<div style="text-align:right;max-width:55%;"><div style="font-size:17px;font-weight:700;color:' + acento + ';line-height:1.2;word-wrap:break-word;">' + loteria + '</div></div>' +
+    '<div style="text-align:center;flex:1;padding:0 8px;">' +
+    '<div style="font-size:19px;font-weight:700;color:' + acento + ';line-height:1.15;word-wrap:break-word;">' + loteria + '</div>' +
+    '<div style="font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;">Ganadores todos los dias</div>' +
+    '</div>' +
+    '<div style="flex-shrink:0;width:80px;"></div>' +
     '</div>';
 
   // Premio mayor
-  var premioMayor = '<div style="text-align:center;margin-bottom:8px;">' +
-    '<div style="font-size:10px;color:rgba(255,255,255,0.45);">Premio Mayor - 2 ultimas cifras</div>' +
-    '<div style="font-size:26px;font-weight:700;color:' + acento + ';">' + mayor + '</div>' +
-    '<div style="font-size:11px;color:rgba(255,255,255,0.5);">Valor numero: ' + valor + '</div>' +
+  var premioMayor = '<div style="text-align:center;margin-bottom:10px;padding:12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.08);">' +
+    '<div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Premio Mayor - 2 ultimas cifras</div>' +
+    '<div style="font-size:44px;font-weight:900;color:' + acento + ';line-height:1;letter-spacing:-1px;text-shadow:0 0 20px ' + acento + '55;">' + mayor + '</div>' +
+    '<div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:6px;">Valor numero: ' + valor + '</div>' +
     '</div>';
 
   // Premios menores
