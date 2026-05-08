@@ -285,7 +285,7 @@ function renderTabHoy() {
     '<div class="rifa-block">' +
     '<div class="rifa-header">' +
     '<div><div class="rifa-name">' + keyToLabel(key) + '</div>' +
-    '<div class="rifa-stats">' + vendidos + ' vendidos · ' + (100 - vendidos) + ' disponibles</div></div>' +
+    '<div class="rifa-stats">' + vendidos + ' vendidos - ' + (100 - vendidos) + ' disponibles</div></div>' +
     '<button class="btn-reset-one" onclick="confirmarReset(\'' + key + '\')">Resetear</button>' +
     '</div>' + buildTabla(numeros) + '</div>';
 }
@@ -325,7 +325,7 @@ function renderHistorial() {
         '<div class="rifa-block">' +
         '<div class="rifa-header"><div>' +
         '<div class="rifa-name">' + keyToLabel(rk) + '</div>' +
-        '<div class="rifa-stats">' + vendidos2 + ' vendidos · ' + (100 - vendidos2) + ' disponibles</div>' +
+        '<div class="rifa-stats">' + vendidos2 + ' vendidos - ' + (100 - vendidos2) + ' disponibles</div>' +
         '</div></div>' + buildTabla(numeros2) + '</div>';
     }
 
@@ -333,7 +333,7 @@ function renderHistorial() {
       '<div class="hist-day">' +
       '<div class="hist-day-header" onclick="toggleDia(\'' + dia + '\')">' +
       '<div><div class="hist-day-title">' + fechaLabel(dia) + '</div>' +
-      '<div class="hist-day-sub">' + rkeys.length + ' rifas · ' + totalVendidos + ' numeros vendidos</div></div>' +
+      '<div class="hist-day-sub">' + rkeys.length + ' rifas - ' + totalVendidos + ' numeros vendidos</div></div>' +
       '<span style="color:rgba(255,255,255,0.3);font-size:16px">+</span>' +
       '</div>' +
       '<div class="hist-day-body" id="dia-' + dia + '">' + rifasHtml + '</div>' +
