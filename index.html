@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caja Dorada — Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060e1a; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #fff; padding: 1rem; }
+    h1 { font-size: 20px; font-weight: 700; color: #00d4ff; margin-bottom: 2px; }
+    .sub { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 1rem; }
+    #sync-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 1rem; font-size: 12px; color: rgba(255,255,255,0.45); }
+    #sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #888; flex-shrink: 0; }
+    #sync-dot.ok { background: #5DCAA5; }
+    #sync-dot.err { background: #f09595; }
+    #sync-dot.loading { background: #f0c84a; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    #main-tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+    .main-tab { padding: 7px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); font-size: 13px; cursor: pointer; }
+    .main-tab.active { background: #00d4ff; color: #060e1a; border-color: #00d4ff; font-weight: 600; }
+    #action-bar { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .action-btn { padding: 7px 14px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer; font-weight: 600; }
+    #btn-export { background: #1d6f42; color: #fff; }
+    #btn-reset-all { background: #8b1a1a; color: #fff; }
+    #btn-refresh { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+    .vendor-tabs-wrap { overflow-x: auto; margin-bottom: 1rem; padding-bottom: 4px; }
+    .vendor-tabs { display: flex; gap: 6px; min-width: max-content; }
+    .vendor-tab { padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.55); font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .vendor-tab.active { background: rgba(0,212,255,0.15); border-color: #00d4ff; color: #00d4ff; font-weight: 600; }
+    .rifa-block { background: #0d1e35; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 0.75rem; }
+    .rifa-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(0,212,255,0.07); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .rifa-name { font-size: 14px; font-weight: 600; color: #00d4ff; }
+    .rifa-stats { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .btn-reset-one { padding: 5px 12px; border-radius: 6px; border: none; background: #8b1a1a; color: #fff; font-size: 11px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.4); font-weight: 500; padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    td { padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: rgba(255,255,255,0.8); }
+    tr:last-child td { border-bottom: none; }
+    .num-col { font-weight: 700; color: #00d4ff; width: 50px; }
+    .badge-sold { display: inline-block; background: rgba(93,202,165,0.15); color: #5DCAA5; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    .badge-free { display: inline-block; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.25); border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    .empty-state { text-align: center; padding: 2.5rem; color: rgba(255,255,255,0.3); font-size: 13px; }
+    .hist-day { background: #0d1e35; border-radius: 10px; margin-bottom: 0.75rem; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
+    .hist-day-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; }
+    .hist-day-title { font-size: 13px; font-weight: 600; color: #fff; text-transform: capitalize; }
+    .hist-day-sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .hist-day-body { display: none; padding: 0 14px 12px; }
+    .hist-day-body.open { display: block; }
+    #modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 100; }
+    #modal-bg.open { display: flex; }
+    #modal { background: #0d1e35; border: 1px solid #2a4a6a; border-radius: 14px; padding: 1.5rem; width: min(320px, 90vw); }
+    #modal h2 { font-size: 15px; font-weight: 600; color: #f09595; margin-bottom: 8px; }
+    #modal p { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 1.25rem; line-height: 1.5; }
+    #modal-actions { display: flex; gap: 8px; }
+    .m-btn { flex: 1; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 13px; border: none; font-weight: 600; }
+    #mc-cancel { background: transparent; border: 1px solid #2a4a6a; color: #8ab4cc; }
+    #mc-confirm { background: #8b1a1a; color: #fff; }
+  </style>
+</head>
+<body>
+
+<h1>Caja Dorada</h1>
+<div class="sub">Panel de administrador</div>
+
+<div id="sync-bar">
+  <div id="sync-dot" class="loading"></div>
+  <span id="sync-text">Conectando...</span>
+</div>
+
+<div id="main-tabs">
+  <button class="main-tab active" id="tab-hoy" onclick="showTab('hoy')">Hoy</button>
+  <button class="main-tab" id="tab-hist" onclick="showTab('historial')">Historial (7 dias)</button>
+</div>
+
+<div id="loteria-bar" style="display:flex;gap:8px;margin-bottom:1rem;align-items:center;">
+  <label style="font-size:12px;color:rgba(255,255,255,0.5);white-space:nowrap;">Loteria del dia:</label>
+  <input type="text" id="inp-loteria" placeholder="Ej: Loteria de Manizales" style="flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;padding:7px 10px;font-size:13px;outline:none;" />
+  <button onclick="guardarLoteria()" style="padding:7px 14px;border-radius:8px;border:none;background:#00d4ff;color:#060e1a;font-size:13px;font-weight:600;cursor:pointer;">Guardar</button>
+</div>
+<div id="action-bar">
+  <button class="action-btn" id="btn-export" onclick="abrirExportModal()">Exportar Excel</button>
+  <button class="action-btn" id="btn-reset-all" onclick="confirmarReset(null)">Resetear todo</button>
+  <button class="action-btn" id="btn-refresh" onclick="cargarDatos()">Actualizar</button>
+</div>
+
+<div id="content">
+  <div class="empty-state">Cargando datos...</div>
+</div>
+
+<div id="export-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:200;">
+  <div style="background:#0d1e35;border:1px solid #2a4a6a;border-radius:14px;padding:1.5rem;width:min(340px,92vw);">
+    <h2 style="font-size:15px;font-weight:600;color:#00d4ff;margin-bottom:1rem;">Exportar Excel</h2>
+    <div id="export-paso1">
+      <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:1rem;">¿Qué datos quieres exportar?</p>
+      <div style="display:flex;gap:8px;">
+        <button onclick="exportarExcel('hoy')" style="flex:1;padding:10px;border-radius:8px;border:1px solid #00d4ff;background:rgba(0,212,255,0.1);color:#00d4ff;font-size:13px;font-weight:600;cursor:pointer;">Hoy</button>
+        <button onclick="mostrarHistorialExport()" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);font-size:13px;font-weight:600;cursor:pointer;">Historial</button>
+      </div>
+    </div>
+    <div id="export-paso2" style="display:none;">
+      <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:10px;">Selecciona el dia a exportar:</p>
+      <div id="export-dias-list"></div>
+      <button onclick="volverPaso1()" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid #2a4a6a;background:transparent;color:#8ab4cc;font-size:12px;cursor:pointer;">Volver</button>
+    </div>
+    <button onclick="cerrarExportModal()" style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:1px solid #2a4a6a;background:transparent;color:rgba(255,255,255,0.35);font-size:12px;cursor:pointer;">Cancelar</button>
+  </div>
+</div>
+
+<div id="modal-bg">
+  <div id="modal">
+    <h2 id="modal-title">Confirmar reseteo</h2>
+    <p id="modal-msg"></p>
+    <div id="modal-actions">
+      <button class="m-btn" id="mc-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="m-btn" id="mc-confirm">Si, resetear</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+var db, allData, historialData, tabActual, vendedorActual, resetKey;
+allData = {};
+historialData = {};
+tabActual = 'hoy';
+vendedorActual = null;
+resetKey = null;
+
+function setSyncStatus(type, text) {
+  document.getElementById('sync-dot').className = type;
+  document.getElementById('sync-text').textContent = text;
+}
+
+function fechaHoy() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function fechaLabel(iso) {
+  var d = new Date(iso + 'T12:00:00');
+  return d.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function tsToHora(ts) {
+  if (!ts) return '-';
+  return new Date(ts).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+}
+
+function keyToLabel(key) {
+  var parts = key.split('_');
+  var vendedor = parts[0] || '';
+  var valor = parts[1] || '';
+  var grupo = parts[2] ? parts[2].replace('g', 'Grupo #') : '';
+  return (vendedor + ' ' + valor + ' ' + grupo).trim();
+}
+
+function limpiarClave(k) {
+  return k.replace(/[.#$[\]\/]/g, '_');
+}
+
+window.addEventListener('load', function() {
+  firebase.initializeApp({
+    apiKey: "AIzaSyDKdXXfrJaWa9rup7EbOVU_eIYq__8gZa8",
+    authDomain: "caja-dorada.firebaseapp.com",
+    databaseURL: "https://caja-dorada-default-rtdb.firebaseio.com",
+    projectId: "caja-dorada",
+    storageBucket: "caja-dorada.firebasestorage.app",
+    messagingSenderId: "218327954995",
+    appId: "1:218327954995:web:868569160171f2380c5546"
+  });
+  db = firebase.database();
+
+  db.ref('.info/connected').on('value', function(snap) {
+    if (snap.val()) {
+      setSyncStatus('ok', 'Conectado');
+    } else {
+      setSyncStatus('err', 'Sin conexion');
+    }
+  });
+
+  cargarDatos();
+});
+
+function guardarLoteria() {
+  var nombre = document.getElementById('inp-loteria').value.trim();
+  if (!nombre) return;
+  db.ref('config/loteria').set(nombre).then(function() {
+    setSyncStatus('ok', 'Loteria guardada: ' + nombre);
+  });
+}
+
+function cargarDatos() {
+  setSyncStatus('loading', 'Cargando...');
+  db.ref('config/loteria').once('value').then(function(snap) {
+    if (snap.val()) document.getElementById('inp-loteria').value = snap.val();
+  });
+  db.ref('rifas').once('value').then(function(snap) {
+    allData = snap.val() || {};
+    setSyncStatus('ok', 'Actualizado');
+    if (tabActual === 'hoy') renderTabHoy();
+  }).catch(function() {
+    setSyncStatus('err', 'Error al cargar');
+  });
+
+  db.ref('historial').once('value').then(function(snap) {
+    historialData = snap.val() || {};
+    if (tabActual === 'historial') renderHistorial();
+  });
+}
+
+function showTab(tab) {
+  tabActual = tab;
+  document.getElementById('tab-hoy').classList.toggle('active', tab === 'hoy');
+  document.getElementById('tab-hist').classList.toggle('active', tab === 'historial');
+  if (tab === 'hoy') renderTabHoy();
+  else renderHistorial();
+}
+
+function seleccionarVendedor(key) {
+  vendedorActual = key;
+  renderTabHoy();
+}
+
+function buildTabla(numeros) {
+  var filas = '';
+  for (var i = 0; i < 100; i++) {
+    var dato = numeros[i] || numeros[String(i)];
+    var num = String(i).padStart(2, '0');
+    if (dato) {
+      var pagado = dato.pago === 'pagado';
+      var esFake = dato.tipo === 'fake';
+      var estadoBadge = esFake
+        ? '<span style="background:rgba(212,160,23,0.15);color:#d4a017;border-radius:4px;padding:2px 8px;font-size:11px">Fake</span>'
+        : '<span class="badge-sold">Vendido</span>';
+      var pagoBadge = esFake ? '-'
+        : pagado
+        ? '<span style="background:rgba(58,184,110,0.15);color:#3ab86e;border-radius:4px;padding:2px 8px;font-size:11px">Pagado</span>'
+        : '<span style="background:rgba(232,200,58,0.15);color:#c8a010;border-radius:4px;padding:2px 8px;font-size:11px">Sin pagar</span>';
+      filas += '<tr><td class="num-col">' + num + '</td>';
+      filas += '<td>' + estadoBadge + '</td>';
+      filas += '<td>' + pagoBadge + '</td>';
+      filas += '<td>' + (dato.apodo || '-') + '</td>';
+      filas += '<td>' + (dato.tel || '-') + '</td>';
+      filas += '<td>' + tsToHora(dato.ts) + '</td></tr>';
+    } else {
+      filas += '<tr><td class="num-col">' + num + '</td>';
+      filas += '<td><span class="badge-free">Libre</span></td>';
+      filas += '<td>-</td><td>-</td><td>-</td><td>-</td></tr>';
+    }
+  }
+  return '<table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Apodo</th><th>Telefono</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table>';
+}
+
+function renderTabHoy() {
+  var content = document.getElementById('content');
+  var keys = Object.keys(allData);
+
+  if (keys.length === 0) {
+    content.innerHTML = '<div class="empty-state">No hay rifas registradas hoy.</div>';
+    return;
+  }
+
+  if (!vendedorActual || !allData[vendedorActual]) {
+    vendedorActual = keys[0];
+  }
+
+  var vendorTabs = '';
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var active = k === vendedorActual ? ' active' : '';
+    vendorTabs += '<button class="vendor-tab' + active + '" onclick="seleccionarVendedor(\'' + k + '\')">' + keyToLabel(k) + '</button>';
+  }
+
+  var key = vendedorActual;
+  var numeros = (allData[key] && allData[key].numeros) ? allData[key].numeros : {};
+  var vendidos = 0;
+  var nkeys = Object.keys(numeros);
+  for (var j = 0; j < nkeys.length; j++) {
+    if (nkeys[j] !== 'null') vendidos++;
+  }
+
+  content.innerHTML =
+    '<div class="vendor-tabs-wrap"><div class="vendor-tabs">' + vendorTabs + '</div></div>' +
+    '<div class="rifa-block">' +
+    '<div class="rifa-header">' +
+    '<div><div class="rifa-name">' + keyToLabel(key) + '</div>' +
+    '<div class="rifa-stats">' + vendidos + ' vendidos · ' + (100 - vendidos) + ' disponibles</div></div>' +
+    '<button class="btn-reset-one" onclick="confirmarReset(\'' + key + '\')">Resetear</button>' +
+    '</div>' + buildTabla(numeros) + '</div>';
+}
+
+function renderHistorial() {
+  var content = document.getElementById('content');
+  var dias = Object.keys(historialData).sort().reverse().slice(0, 7);
+
+  if (dias.length === 0) {
+    content.innerHTML = '<div class="empty-state">No hay historial aun.<br>El historial se guarda al resetear.</div>';
+    return;
+  }
+
+  var html = '';
+  for (var d = 0; d < dias.length; d++) {
+    var dia = dias[d];
+    var rifas = historialData[dia] || {};
+    var rkeys = Object.keys(rifas);
+    var totalVendidos = 0;
+    for (var r = 0; r < rkeys.length; r++) {
+      var nkeys2 = Object.keys((rifas[rkeys[r]].numeros || {}));
+      for (var n = 0; n < nkeys2.length; n++) {
+        if (nkeys2[n] !== 'null') totalVendidos++;
+      }
+    }
+
+    var rifasHtml = '';
+    for (var r2 = 0; r2 < rkeys.length; r2++) {
+      var rk = rkeys[r2];
+      var numeros2 = (rifas[rk] && rifas[rk].numeros) ? rifas[rk].numeros : {};
+      var vendidos2 = 0;
+      var nk2 = Object.keys(numeros2);
+      for (var n2 = 0; n2 < nk2.length; n2++) {
+        if (nk2[n2] !== 'null') vendidos2++;
+      }
+      rifasHtml +=
+        '<div class="rifa-block">' +
+        '<div class="rifa-header"><div>' +
+        '<div class="rifa-name">' + keyToLabel(rk) + '</div>' +
+        '<div class="rifa-stats">' + vendidos2 + ' vendidos · ' + (100 - vendidos2) + ' disponibles</div>' +
+        '</div></div>' + buildTabla(numeros2) + '</div>';
+    }
+
+    html +=
+      '<div class="hist-day">' +
+      '<div class="hist-day-header" onclick="toggleDia(\'' + dia + '\')">' +
+      '<div><div class="hist-day-title">' + fechaLabel(dia) + '</div>' +
+      '<div class="hist-day-sub">' + rkeys.length + ' rifas · ' + totalVendidos + ' numeros vendidos</div></div>' +
+      '<span style="color:rgba(255,255,255,0.3);font-size:16px">+</span>' +
+      '</div>' +
+      '<div class="hist-day-body" id="dia-' + dia + '">' + rifasHtml + '</div>' +
+      '</div>';
+  }
+  content.innerHTML = html;
+}
+
+function toggleDia(dia) {
+  document.getElementById('dia-' + dia).classList.toggle('open');
+}
+
+function confirmarReset(key) {
+  resetKey = key;
+  document.getElementById('modal-title').textContent = key ? 'Resetear rifa' : 'Resetear todo';
+  document.getElementById('modal-msg').textContent = key
+    ? 'Borrar todos los numeros de "' + keyToLabel(key) + '"? Se guardara en el historial.'
+    : 'Borrar TODAS las rifas de hoy? Se guardaran en el historial.';
+  document.getElementById('mc-confirm').onclick = ejecutarReset;
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+  resetKey = null;
+}
+
+function ejecutarReset() {
+  var hoy = fechaHoy();
+  closeModal();
+  if (resetKey) {
+    var dato = allData[resetKey];
+    if (!dato) return;
+    var clave = limpiarClave(resetKey);
+    db.ref('historial/' + hoy + '/' + clave).set(dato).then(function() {
+      return db.ref('rifas/' + clave).remove();
+    }).then(function() {
+      delete allData[resetKey];
+      vendedorActual = null;
+      renderTabHoy();
+    });
+  } else {
+    db.ref('historial/' + hoy).set(allData).then(function() {
+      return db.ref('rifas').remove();
+    }).then(function() {
+      allData = {};
+      vendedorActual = null;
+      renderTabHoy();
+    });
+  }
+}
+
+function valorDesdeKey(key) {
+  var parts = key.split('_');
+  var valStr = parts[1] || '0k';
+  var num = parseInt(valStr.replace('k', ''), 10);
+  return num * 1000;
+}
+
+function abrirExportModal() {
+  document.getElementById('export-modal-bg').style.display = 'flex';
+  document.getElementById('export-paso1').style.display = 'block';
+  document.getElementById('export-paso2').style.display = 'none';
+}
+
+function cerrarExportModal() {
+  document.getElementById('export-modal-bg').style.display = 'none';
+}
+
+function volverPaso1() {
+  document.getElementById('export-paso1').style.display = 'block';
+  document.getElementById('export-paso2').style.display = 'none';
+}
+
+function mostrarHistorialExport() {
+  var dias = Object.keys(historialData).sort().reverse().slice(0, 7);
+  if (dias.length === 0) {
+    alert('No hay historial guardado aun.');
+    return;
+  }
+  document.getElementById('export-paso1').style.display = 'none';
+  document.getElementById('export-paso2').style.display = 'block';
+  var lista = document.getElementById('export-dias-list');
+  lista.innerHTML = dias.map(function(dia) {
+    var rifas = historialData[dia] || {};
+    var total = Object.keys(rifas).reduce(function(acc, k) {
+      return acc + Object.keys(rifas[k].numeros || {}).filter(function(n) { return n !== 'null'; }).length;
+    }, 0);
+    return '<button onclick="exportarExcel('' + dia + '')" style="display:block;width:100%;margin-bottom:6px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;font-size:13px;text-align:left;cursor:pointer;">' +
+      '<span style="font-weight:600;color:#00d4ff;">' + fechaLabel(dia) + '</span>' +
+      '<span style="float:right;font-size:11px;color:rgba(255,255,255,0.4);">' + Object.keys(rifas).length + ' rifas · ' + total + ' vendidos</span>' +
+      '</button>';
+  }).join('');
+}
+
+function exportarExcel(fuente) {
+  cerrarExportModal();
+  var datos;
+  var nombreArchivo;
+  if (fuente === 'hoy') {
+    datos = allData;
+    nombreArchivo = 'CajaDorada_Hoy_' + fechaHoy().replace(/-/g, '') + '.xlsx';
+  } else {
+    datos = (historialData[fuente] || {});
+    nombreArchivo = 'CajaDorada_' + fuente.replace(/-/g, '') + '.xlsx';
+  }
+  var keys = Object.keys(datos);
+  if (keys.length === 0) { alert('No hay datos para exportar.'); return; }
+  var wb = XLSX.utils.book_new();
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    var valorNum = valorDesdeKey(key);
+    var numeros = (datos[key] && datos[key].numeros) ? datos[key].numeros : {};
+    var rows = [['Numero', 'Estado', 'Pago', 'Apodo', 'Telefono', 'Hora', 'Valor']];
+    var total = 0;
+    for (var j = 0; j < 100; j++) {
+      var dato = numeros[j] || numeros[String(j)];
+      var num = String(j).padStart(2, '0');
+      if (dato) {
+        var esFake = dato.tipo === 'fake';
+        var pagado = dato.pago === 'pagado';
+        var valor = (!esFake && pagado) ? valorNum : 0;
+        total += valor;
+        var estado = esFake ? 'Fake' : 'Vendido';
+        var pagoStr = esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar');
+        var apodo = esFake ? '-' : (dato.apodo || '');
+        var tel = esFake ? '-' : (dato.tel || '');
+        rows.push([num, estado, pagoStr, apodo, tel, tsToHora(dato.ts), valor]);
+      } else {
+        rows.push([num, 'Libre', '', '', '', '', 0]);
+      }
+    }
+    rows.push(['', '', '', '', '', 'TOTAL RECAUDADO', total]);
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:8},{wch:10},{wch:12},{wch:18},{wch:15},{wch:8},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, ws, keyToLabel(key).slice(0, 31));
+  }
+  XLSX.writeFile(wb, nombreArchivo);
+}
+
+document.getElementById('modal-bg').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
