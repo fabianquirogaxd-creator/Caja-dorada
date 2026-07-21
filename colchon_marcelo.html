@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Colchón de Marcelo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14110E; --panel:#1F1A15; --panel2:#28211A;
+    --gold:#E8B84B; --gold-deep:#C6952E; --gold-soft:#F0D089;
+    --cream:#F3EDE2; --muted:#9A8F7D; --line:#37301F;
+    --green:#7FC98A; --red:#E08A6B;
+    --disp:"Fraunces",Georgia,serif; --num:"Space Grotesk",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(120% 90% at 50% -10%, #221b12 0%, var(--ink) 55%) fixed;
+    color:var(--cream); font-family:var(--num);
+    min-height:100vh; padding:22px 16px 60px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:820px;margin:0 auto}
+  header{text-align:center;margin-bottom:26px}
+  .eyebrow{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold-deep);font-weight:600}
+  h1{font-family:var(--disp);font-weight:600;font-size:clamp(30px,7vw,46px);line-height:1.05;margin:6px 0 4px;color:var(--cream)}
+  h1 span{color:var(--gold)}
+  .sub{color:var(--muted);font-size:14px}
+
+  .jars{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+  @media(max-width:620px){.jars{grid-template-columns:1fr}}
+  .jar{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:20px;padding:18px 16px 16px;
+    position:relative;overflow:hidden;
+  }
+  .jar h2{font-family:var(--disp);font-weight:600;font-size:19px;margin-bottom:2px}
+  .jar .goal{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+  .jar-body{display:flex;gap:14px;align-items:stretch}
+  .tube{width:44px;flex:none;border:1px solid var(--line);border-radius:12px;background:#100d09;position:relative;overflow:hidden;min-height:96px}
+  .fill{position:absolute;left:0;right:0;bottom:0;height:0%;background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));transition:height .6s cubic-bezier(.3,.9,.3,1)}
+  .fill.col{background:linear-gradient(180deg,#A7E1AE,#5FA96B)}
+  .fill.deuda{background:linear-gradient(180deg,#F0B49C,#C56A47)}
+  .jar-nums{display:flex;flex-direction:column;justify-content:center}
+  .pct{font-family:var(--disp);font-weight:700;font-size:26px;line-height:1;color:var(--gold)}
+  .have{font-size:15px;font-weight:600;margin-top:4px}
+  .miss{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .done{color:var(--green)!important}
+  .tag{display:inline-block;margin-top:10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);font-weight:600}
+
+  .daily{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:14px 18px;margin-bottom:22px;display:flex;justify-content:space-between;
+    align-items:center;gap:12px;flex-wrap:wrap}
+  .daily .lbl{color:var(--muted);font-size:13px}
+  .daily .big{font-family:var(--disp);font-weight:600;font-size:26px;color:var(--gold)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:18px}
+  .card h3{font-family:var(--disp);font-weight:600;font-size:18px;margin-bottom:14px}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px 2px;letter-spacing:.02em}
+  input,select{
+    width:100%;background:#100d09;border:1px solid var(--line);color:var(--cream);
+    font-family:var(--num);font-size:16px;padding:12px 14px;border-radius:12px;outline:none;
+  }
+  input:focus,select:focus{border-color:var(--gold-deep)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .seg{display:flex;gap:8px}
+  .seg button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);
+    background:#100d09;color:var(--muted);font-family:var(--num);font-weight:600;
+    font-size:14px;cursor:pointer;transition:.15s}
+  .seg button.on{background:var(--gold);color:#1a1409;border-color:var(--gold)}
+  .add{width:100%;margin-top:14px;padding:15px;border:none;border-radius:14px;
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));
+    color:#1a1409;font-family:var(--num);font-weight:700;font-size:17px;cursor:pointer;
+    letter-spacing:.02em;transition:.15s}
+  .add:hover{filter:brightness(1.06)}
+  .add:active{transform:translateY(1px)}
+
+  /* ---- Tabla de gastos ---- */
+  .gastos-sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .gtab{width:100%;border-collapse:collapse;font-size:14px}
+  .gtab th{text-align:left;color:var(--muted);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;padding:0 0 10px;border-bottom:1px solid var(--line);font-weight:600}
+  .gtab th.r,.gtab td.r{text-align:right}
+  .gtab th.c,.gtab td.c{text-align:center}
+  .gtab td{padding:11px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  .gtab tr:last-child td{border-bottom:none}
+  .gname{font-weight:600;color:var(--cream)}
+  .gnote{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .gval{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--cream);white-space:nowrap}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.07em;
+    text-transform:uppercase;padding:4px 9px;border-radius:999px;white-space:nowrap}
+  .badge.alta{background:#3a2016;color:#F0A98A;border:1px solid #5a2e1e}
+  .badge.media{background:#3a2f14;color:var(--gold-soft);border:1px solid #5a4a1e}
+  .badge.baja{background:#26211a;color:var(--muted);border:1px solid var(--line)}
+  .gdel{background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1}
+  .gdel:hover{color:var(--red);background:#2a1c16}
+  .gtot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .gtot .lbl{color:var(--muted);font-size:13px}
+  .gtot .val{font-family:var(--disp);font-weight:600;font-size:23px;color:var(--gold)}
+  .gtot.small{margin-top:8px;padding-top:0;border-top:none}
+  .gtot.small .val{font-size:17px;color:var(--cream)}
+  .gtot.small .lbl{font-size:12.5px}
+
+  .addgasto{margin-top:16px;border-top:1px dashed var(--line);padding-top:16px}
+  .addgasto .mini{font-size:12px;color:var(--gold-deep);font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;margin-bottom:12px}
+  .chkline{display:flex;align-items:center;gap:9px;margin-bottom:12px;color:var(--muted);font-size:13px}
+  .chkline input{width:auto;flex:none}
+  .addgasto .add{margin-top:4px}
+
+  .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.plan-grid{grid-template-columns:1fr}}
+  .plan-cell{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:15px 14px}
+  .plan-lbl{color:var(--muted);font-size:12px;margin-bottom:6px;line-height:1.3}
+  .plan-big{font-family:var(--disp);font-weight:600;font-size:25px;color:var(--gold);line-height:1}
+  .plan-note{color:var(--muted);font-size:11.5px;margin-top:5px;line-height:1.35}
+
+  .hist h3{font-family:var(--disp);font-weight:600;font-size:18px;margin-bottom:4px}
+  .empty{color:var(--muted);font-size:14px;padding:18px 0;text-align:center;font-style:italic}
+  .item{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:none}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .dot.mes{background:var(--gold)} .dot.colchon{background:var(--green)} .dot.deuda{background:var(--red)}
+  .item .amt{font-weight:600;font-size:16px}
+  .item .meta{font-size:12px;color:var(--muted)}
+  .item .grow{flex:1}
+  .del{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:8px}
+  .del:hover{color:var(--red);background:#2a1c16}
+
+  details{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+  summary{cursor:pointer;color:var(--muted);font-size:13px;letter-spacing:.04em;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"\2699  ";}
+  .settings{margin-top:14px}
+  .reset{margin-top:14px;background:none;border:1px solid var(--red);color:var(--red);
+    padding:10px 16px;border-radius:12px;font-family:var(--num);cursor:pointer;font-size:13px}
+  .reset:hover{background:#2a1616}
+  .foot{text-align:center;color:var(--line);font-size:11px;margin-top:28px;letter-spacing:.1em}
+  @media(prefers-reduced-motion:reduce){.fill{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Ahorro diario</div>
+    <h1>El colchón de <span>Marcelo</span></h1>
+    <p class="sub">Mira tus gastos, mete lo que ganas cada día y ve cuánto te falta.</p>
+  </header>
+
+  <!-- TABLA DE GASTOS -->
+  <div class="card gastos">
+    <h3>Los gastos del mes</h3>
+    <p class="gastos-sub">Ordenados por urgencia. Puedes añadir o quitar gastos abajo — el total y la meta diaria se recalculan solos.</p>
+    <table class="gtab">
+      <thead><tr><th>Gasto</th><th class="r">Valor</th><th class="c">Urgencia</th><th class="c"></th></tr></thead>
+      <tbody id="gtabBody"></tbody>
+    </table>
+    <div class="gtot"><span class="lbl">Total mensual (con cuotas)</span><span class="val" id="gtotCon">$0</span></div>
+    <div class="gtot small"><span class="lbl">Total sin las cuotas temporales</span><span class="val" id="gtotSin">$0</span></div>
+
+    <div class="addgasto">
+      <div class="mini">Añadir un gasto</div>
+      <div class="row">
+        <div><label>Nombre</label><input id="ngName" type="text" placeholder="Ej: Transporte" /></div>
+        <div><label>Valor al mes</label><input id="ngVal" type="number" inputmode="numeric" placeholder="Ej: 120000" /></div>
+      </div>
+      <div class="row">
+        <div><label>Urgencia</label>
+          <select id="ngUrg"><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select>
+        </div>
+        <div><label>Nota (opcional)</label><input id="ngNote" type="text" placeholder="para qué es" /></div>
+      </div>
+      <label class="chkline"><input id="ngTemp" type="checkbox" /> Es una cuota temporal (se termina de pagar pronto)</label>
+      <button class="add" id="addGastoBtn">Añadir gasto</button>
+    </div>
+  </div>
+
+  <!-- PLAN DIARIO Y COLCHÓN -->
+  <div class="card plan">
+    <h3>El plan: cuánto conseguir</h3>
+    <div class="plan-grid">
+      <div class="plan-cell">
+        <div class="plan-lbl">Debe conseguir al día</div>
+        <div class="plan-big" id="metaDiaCon">$0</div>
+        <div class="plan-note" id="metaDiaConNote">para cubrir todos los gastos</div>
+      </div>
+      <div class="plan-cell">
+        <div class="plan-lbl">Meta diaria sin las cuotas</div>
+        <div class="plan-big" id="metaDiaSin">$0</div>
+        <div class="plan-note">cuando terminen las cuotas temporales, baja a esto</div>
+      </div>
+      <div class="plan-cell">
+        <div class="plan-lbl">Meta del colchón</div>
+        <div class="plan-big" id="colMetaTxt">$0</div>
+        <div class="plan-note" id="colMetaNote">meses de gastos guardados aparte</div>
+      </div>
+      <div class="plan-cell">
+        <div class="plan-lbl">Ahorro diario para el colchón</div>
+        <div class="plan-big" id="ahorroDiaCol">$0</div>
+        <div class="plan-note" id="ahorroDiaColNote">aparte de la meta del mes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRASCOS -->
+  <section class="jars">
+    <div class="jar">
+      <h2>Meta del mes</h2>
+      <div class="goal" id="goalMesTxt"></div>
+      <div class="jar-body">
+        <div class="tube"><div class="fill" id="fillMes"></div></div>
+        <div class="jar-nums">
+          <div class="pct" id="pctMes">0%</div>
+          <div class="have" id="haveMes">$0</div>
+          <div class="miss">Falta <b id="missMes">$0</b></div>
+          <span class="tag">Gastos del mes</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="jar">
+      <h2>Colchón</h2>
+      <div class="goal" id="goalColTxt"></div>
+      <div class="jar-body">
+        <div class="tube"><div class="fill col" id="fillCol"></div></div>
+        <div class="jar-nums">
+          <div class="pct green" id="pctCol">0%</div>
+          <div class="have" id="haveCol">$0</div>
+          <div class="miss">Falta <b id="missCol">$0</b></div>
+          <span class="tag">Meses guardados</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="jar">
+      <h2>Deuda</h2>
+      <div class="goal" id="goalDeuTxt"></div>
+      <div class="jar-body">
+        <div class="tube"><div class="fill deuda" id="fillDeu"></div></div>
+        <div class="jar-nums">
+          <div class="pct red" id="pctDeu">0%</div>
+          <div class="have" id="haveDeu">$0</div>
+          <div class="miss">Falta <b id="missDeu">$0</b></div>
+          <span class="tag">Pago sin fecha</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- META DIARIA -->
+  <div class="daily">
+    <div>
+      <div class="lbl">Para llegar a la meta del mes te faltan <b id="diasRest">0</b> días hábiles</div>
+      <div class="lbl" style="margin-top:2px">necesitas conseguir por día…</div>
+    </div>
+    <div class="big" id="metaDia">$0</div>
+  </div>
+
+  <!-- AGREGAR INGRESO -->
+  <div class="card">
+    <h3>¿Cuánto ganaste hoy?</h3>
+    <label>Monto</label>
+    <input id="monto" type="number" inputmode="numeric" placeholder="Ej: 80000" />
+    <div style="height:12px"></div>
+    <label>¿A dónde va?</label>
+    <div class="seg" id="seg">
+      <button data-b="mes" class="on">Mes</button>
+      <button data-b="colchon">Colchón</button>
+      <button data-b="deuda">Deuda</button>
+    </div>
+    <div style="height:12px"></div>
+    <div class="row">
+      <div><label>Fecha</label><input id="fecha" type="date" /></div>
+      <div><label>Nota (opcional)</label><input id="nota" type="text" placeholder="rifa, venta…" /></div>
+    </div>
+    <button class="add" id="addBtn">Agregar ingreso</button>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="card hist">
+    <h3>Movimientos</h3>
+    <div id="lista"></div>
+  </div>
+
+  <details>
+    <summary>Ajustes</summary>
+    <div class="settings">
+      <div class="row">
+        <div><label>Días que trabaja al mes</label><input id="setDias" type="number" /></div>
+        <div><label>Día de hoy (del mes)</label><input id="setHoy" type="number" /></div>
+      </div>
+      <div class="row">
+        <div><label>Meses de colchón</label><input id="setMesesCol" type="number" /></div>
+        <div><label>Juntar el colchón en (meses)</label><input id="setMesesJuntar" type="number" /></div>
+      </div>
+      <div class="row">
+        <div><label>Deuda total ($)</label><input id="setDeu" type="number" /></div>
+        <div></div>
+      </div>
+      <button class="reset" id="resetBtn">Borrar todos los movimientos</button>
+    </div>
+  </details>
+
+  <div class="foot">CAJA DORADA · seguimiento personal</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ==============================================================
+     CONFIGURACIÓN DE SINCRONIZACIÓN  (opcional, Supabase)
+     Mientras estén vacíos, la página guarda solo en cada equipo.
+     ============================================================== */
+  const SUPA_URL = "";
+  const SUPA_KEY = "";
+  const ROW_ID   = "marcelo";
+  /* ============================================================== */
+
+  const KEY="colchon_marcelo_state";
+  const GASTOS_INI=[
+    {id:"g1", name:"Casa",           val:458000, urg:"Alta",  note:"Vivienda, no negociable",        temp:false},
+    {id:"g2", name:"Mamá",           val:500000, urg:"Alta",  note:"Aporte familiar",                temp:false},
+    {id:"g3", name:"Variedades",     val:400000, urg:"Alta",  note:"Mercado y varios",               temp:false},
+    {id:"g4", name:"Cuotas celular", val:360000, urg:"Alta",  note:"Deuda con plazo: solo 3 meses más", temp:true},
+    {id:"g5", name:"Claro internet", val:100000, urg:"Alta",  note:"Necesario para trabajar",        temp:false},
+    {id:"g6", name:"Celular",        val:45000,  urg:"Alta",  note:"Plan / comunicación",            temp:false},
+    {id:"g7", name:"Gym",            val:110000, urg:"Media", note:"Salud y bienestar",              temp:false},
+    {id:"g8", name:"Bolos",          val:200000, urg:"Baja",  note:"Ocio, recortable si aprieta",    temp:false},
+    {id:"g9", name:"Netflix",        val:30000,  urg:"Baja",  note:"Ocio, recortable si aprieta",    temp:false}
+  ];
+  const DEF={gastos:JSON.parse(JSON.stringify(GASTOS_INI)), dias:26, hoy:1, mesesCol:3, mesesJuntar:6, deu:996000, items:[]};
+  let store=JSON.parse(JSON.stringify(DEF)); store._t=0;
+  let bucket="mes";
+  const syncOn=!!(SUPA_URL && SUPA_KEY);
+
+  const $=id=>document.getElementById(id);
+  const money=n=>"$"+Math.round(n).toLocaleString("es-CO");
+  function fill(s){ if(!s) return null; for(const k in DEF) if(s[k]===undefined) s[k]=JSON.parse(JSON.stringify(DEF[k])); if(s._t===undefined) s._t=0; if(!Array.isArray(s.gastos)) s.gastos=JSON.parse(JSON.stringify(GASTOS_INI)); return s; }
+
+  const H={ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json" };
+  async function remoteGet(){
+    const url=SUPA_URL+"/rest/v1/tracker?id=eq."+encodeURIComponent(ROW_ID)+"&select=data";
+    const r=await fetch(url,{headers:H});
+    if(!r.ok) throw new Error("GET "+r.status);
+    const rows=await r.json();
+    return (rows[0]&&rows[0].data)||null;
+  }
+  async function remotePut(){
+    const r=await fetch(SUPA_URL+"/rest/v1/tracker",{method:"POST",
+      headers:Object.assign({},H,{Prefer:"resolution=merge-duplicates,return=minimal"}),
+      body:JSON.stringify([{id:ROW_ID, data:store}])});
+    if(!r.ok) throw new Error("PUT "+r.status);
+  }
+
+  async function load(){
+    let s=null, ok=false;
+    if(syncOn){ try{ s=await remoteGet(); ok=!!s; }catch(e){} }
+    if(!s){ try{ const r=localStorage.getItem(KEY); if(r) s=JSON.parse(r); }catch(e){} }
+    if(!s) s=window.__mem||null;
+    s=fill(s)||JSON.parse(JSON.stringify(DEF));
+    if(syncOn && !ok){ store=s; try{ await remotePut(); }catch(e){} }
+    return s;
+  }
+  let putTimer=null;
+  function save(){
+    store._t=Date.now();
+    window.__mem=store;
+    try{ localStorage.setItem(KEY,JSON.stringify(store)); }catch(e){}
+    if(!syncOn){ status("local"); return; }
+    clearTimeout(putTimer);
+    putTimer=setTimeout(async()=>{ try{ await remotePut(); status("ok"); }catch(e){ status("err"); } },500);
+  }
+  function status(k){
+    const f=document.querySelector(".foot"); if(!f) return;
+    f.textContent = k==="ok" ? "✓ Sincronizado · igual en celular y computador"
+      : k==="err" ? "⚠ Sin señal — guardado local, reintentará al volver"
+      : "Guardado en este equipo";
+  }
+
+  $("fecha").valueAsDate=new Date();
+
+  function sum(b){return store.items.filter(i=>i.b===b).reduce((a,i)=>a+i.n,0);}
+  function totalCon(){return store.gastos.reduce((a,g)=>a+(+g.val||0),0);}
+  function totalSin(){return store.gastos.filter(g=>!g.temp).reduce((a,g)=>a+(+g.val||0),0);}
+
+  function renderGastos(){
+    const B=$("gtabBody");
+    if(store.gastos.length===0){
+      B.innerHTML='<tr><td colspan="4" class="empty">No hay gastos. Añade uno abajo.</td></tr>';
+    }else{
+      B.innerHTML=store.gastos.map(g=>{
+        const cls=g.urg==="Alta"?"alta":(g.urg==="Media"?"media":"baja");
+        const note=(g.note?g.note:"")+(g.temp?(g.note?" · ":"")+"cuota temporal":"");
+        return '<tr><td><span class="gname">'+g.name+'</span>'+
+          (note?'<span class="gnote">'+note+'</span>':'')+'</td>'+
+          '<td class="r"><span class="gval">'+money(g.val)+'</span></td>'+
+          '<td class="c"><span class="badge '+cls+'">'+g.urg+'</span></td>'+
+          '<td class="c"><button class="gdel" data-gid="'+g.id+'" title="Quitar">✕</button></td></tr>';
+      }).join("");
+      B.querySelectorAll(".gdel").forEach(b=>b.onclick=()=>{
+        store.gastos=store.gastos.filter(g=>g.id!=b.dataset.gid); save(); render();
+      });
+    }
+  }
+
+  function render(){
+    const tCon=totalCon(), tSin=totalSin();
+    // metas derivadas de los gastos
+    store.mes=tCon;
+    store.col=tSin*Math.max(0,store.mesesCol);
+    const dias=Math.max(1,store.dias);
+
+    renderGastos();
+    $("gtotCon").textContent=money(tCon);
+    $("gtotSin").textContent=money(tSin);
+
+    $("metaDiaCon").textContent=money(tCon/dias);
+    $("metaDiaConNote").textContent="trabajando "+dias+" días al mes, para cubrir todo";
+    $("metaDiaSin").textContent=money(tSin/dias);
+    $("colMetaTxt").textContent=money(store.col);
+    $("colMetaNote").textContent=store.mesesCol+" meses de gastos guardados aparte";
+    const ahorro=store.mesesJuntar>0 ? store.col/(store.mesesJuntar*dias) : 0;
+    $("ahorroDiaCol").textContent=money(ahorro);
+    $("ahorroDiaColNote").textContent="aparte de la meta del mes, para juntarlo en "+store.mesesJuntar+" meses";
+
+    const gMes=store.mes, gCol=store.col, gDeu=store.deu;
+    const sMes=sum("mes"), sCol=sum("colchon"), sDeu=sum("deuda");
+    const pMes=gMes>0?Math.min(100,sMes/gMes*100):0;
+    const pCol=gCol>0?Math.min(100,sCol/gCol*100):0;
+    const pDeu=gDeu>0?Math.min(100,sDeu/gDeu*100):0;
+
+    $("goalMesTxt").textContent="Meta: "+money(gMes);
+    $("goalColTxt").textContent="Meta: "+money(gCol);
+    $("goalDeuTxt").textContent="Por pagar: "+money(gDeu);
+    $("fillMes").style.height=pMes+"%";
+    $("fillCol").style.height=pCol+"%";
+    $("fillDeu").style.height=pDeu+"%";
+    $("pctMes").textContent=Math.round(pMes)+"%";
+    $("pctCol").textContent=Math.round(pCol)+"%";
+    $("pctDeu").textContent=Math.round(pDeu)+"%";
+    $("haveMes").textContent=money(sMes);
+    $("haveCol").textContent=money(sCol);
+    $("haveDeu").textContent=money(sDeu);
+
+    const fMes=Math.max(0,gMes-sMes), fCol=Math.max(0,gCol-sCol), fDeu=Math.max(0,gDeu-sDeu);
+    $("missMes").parentElement.innerHTML = fMes<=0
+      ? '<span class="done">¡Meta del mes cumplida! 🎉</span>'
+      : 'Falta <b id="missMes">'+money(fMes)+'</b>';
+    $("missCol").parentElement.innerHTML = fCol<=0
+      ? '<span class="done">¡Colchón completo! 🛡️</span>'
+      : 'Falta <b id="missCol">'+money(fCol)+'</b>';
+    $("missDeu").parentElement.innerHTML = fDeu<=0
+      ? '<span class="done">¡Deuda pagada! ✅</span>'
+      : 'Abonado, falta <b id="missDeu">'+money(fDeu)+'</b>';
+
+    const diasRest=Math.max(1, store.dias - store.hoy + 1);
+    $("diasRest").textContent=diasRest;
+    $("metaDia").textContent = fMes<=0 ? "¡Ya! ✅" : money(fMes/diasRest);
+
+    const L=$("lista");
+    if(store.items.length===0){
+      L.innerHTML='<div class="empty">Todavía no has agregado nada. ¡Empieza hoy!</div>';
+    }else{
+      L.innerHTML=store.items.slice().reverse().map(it=>{
+        const cls=it.b==="mes"?"mes":(it.b==="deuda"?"deuda":"colchon");
+        const nom=it.b==="mes"?"Meta del mes":(it.b==="deuda"?"Deuda":"Colchón");
+        const f=it.f?new Date(it.f+"T00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"short"}):"";
+        const nota=it.note?" · "+it.note:"";
+        return '<div class="item"><span class="dot '+cls+'"></span>'+
+          '<div><div class="amt">'+money(it.n)+'</div>'+
+          '<div class="meta">'+nom+' · '+f+nota+'</div></div>'+
+          '<div class="grow"></div>'+
+          '<button class="del" data-id="'+it.id+'">✕</button></div>';
+      }).join("");
+      L.querySelectorAll(".del").forEach(b=>b.onclick=()=>{
+        store.items=store.items.filter(i=>i.id!=b.dataset.id);save();render();
+      });
+    }
+    $("setDias").value=store.dias; $("setHoy").value=store.hoy;
+    $("setMesesCol").value=store.mesesCol; $("setMesesJuntar").value=store.mesesJuntar;
+    $("setDeu").value=store.deu;
+  }
+
+  $("seg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    bucket=b.dataset.b;
+    $("seg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+  });
+
+  $("addBtn").onclick=()=>{
+    const n=parseFloat($("monto").value);
+    if(!n||n<=0){$("monto").focus();return;}
+    store.items.push({id:Date.now()+""+Math.floor(Math.random()*999),
+      n:n,b:bucket,f:$("fecha").value,note:$("nota").value.trim()});
+    save();$("monto").value="";$("nota").value="";render();
+  };
+  $("monto").addEventListener("keydown",e=>{if(e.key==="Enter")$("addBtn").click();});
+
+  $("addGastoBtn").onclick=()=>{
+    const name=$("ngName").value.trim();
+    const val=parseFloat($("ngVal").value);
+    if(!name){$("ngName").focus();return;}
+    if(!val||val<=0){$("ngVal").focus();return;}
+    store.gastos.push({id:"u"+Date.now()+""+Math.floor(Math.random()*999),
+      name:name, val:val, urg:$("ngUrg").value, note:$("ngNote").value.trim(), temp:$("ngTemp").checked});
+    save();
+    $("ngName").value=""; $("ngVal").value=""; $("ngNote").value=""; $("ngTemp").checked=false; $("ngUrg").value="Alta";
+    render();
+  };
+
+  ["setDias","setHoy","setMesesCol","setMesesJuntar","setDeu"].forEach(id=>{
+    $(id).addEventListener("input",()=>{
+      const v=parseFloat($(id).value)||0;
+      if(id==="setDias")store.dias=Math.max(1,v);
+      if(id==="setHoy")store.hoy=Math.max(1,v);
+      if(id==="setMesesCol")store.mesesCol=Math.max(0,v);
+      if(id==="setMesesJuntar")store.mesesJuntar=Math.max(0,v);
+      if(id==="setDeu")store.deu=v;
+      save();render();
+    });
+  });
+
+  $("resetBtn").onclick=()=>{
+    if(confirm("¿Borrar todos los movimientos? Los gastos y las metas se conservan.")){
+      store.items=[];save();render();
+    }
+  };
+
+  (async()=>{ store=await load(); render(); status(syncOn?"ok":"local"); })();
+
+  let busy=false;
+  async function refresh(){
+    if(!syncOn || busy || document.hidden) return; busy=true;
+    try{ const r=await remoteGet(); if(r && (r._t||0)>(store._t||0)){ store=fill(r); render(); } }
+    catch(e){} finally{ busy=false; }
+  }
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
+  window.addEventListener("focus",refresh);
+  setInterval(refresh,15000);
+})();
+</script>
+</body>
+</html>
