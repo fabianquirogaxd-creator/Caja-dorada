@@ -79,6 +79,19 @@
 
   #btn-whatsapp-fijo { display: block; width: 100%; margin-top: 12px; background: #25D366; border: none; border-radius: 10px; color: #fff; font-weight: 700; font-size: 14px; padding: 12px; cursor: pointer; text-decoration: none; text-align: center; }
 
+  #btn-consultar { display: block; width: 100%; margin-bottom: 12px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; color: #00d4ff; font-weight: 700; font-size: 13px; padding: 10px; cursor: pointer; text-align: center; }
+
+  #consulta-modal input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid #2a4a6a; border-radius: 8px; color: #fff; padding: 11px 12px; font-size: 15px; outline: none; margin-top: 5px; }
+  #consulta-modal input:focus { border-color: #00d4ff; }
+  #consulta-resultados { margin-top: 14px; max-height: 260px; overflow-y: auto; }
+  .res-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 9px 12px; margin-bottom: 6px; }
+  .res-num { font-size: 16px; font-weight: 700; color: #00d4ff; }
+  .res-tier { font-size: 11px; color: rgba(255,255,255,0.45); }
+  .res-estado { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+  .res-estado.pagado { background: rgba(58,184,110,0.15); color: #3ab86e; }
+  .res-estado.pendiente { background: rgba(232,200,58,0.15); color: #c8a010; }
+  #consulta-vacio { font-size: 13px; color: rgba(255,255,255,0.4); text-align: center; padding: 14px 0; }
+
   /* MODAL RESERVA */
   #modal-bg, #ok-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
   #modal-bg.open, #ok-modal-bg.open { display: flex; }
@@ -115,6 +128,8 @@
       <div id="loteria-sub">2 ultimas cifras - Premio Mayor</div>
     </div>
   </div>
+
+  <button id="btn-consultar">Consultar mis boletos</button>
 
   <div id="tabs">
     <button class="tab-btn" data-valor="5k">$5.000</button>
@@ -193,12 +208,44 @@
   </div>
 </div>
 
+<div id="consulta-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:150;padding:1rem;">
+  <div id="consulta-modal" style="background:#0d1e35;border:1px solid #1e3a5a;border-radius:14px;padding:1.5rem;width:min(340px, 92vw);">
+    <h2 style="font-size:17px;font-weight:700;color:#00d4ff;margin-bottom:4px;">Consultar mis boletos</h2>
+    <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:4px;">Escribe el telefono con el que reservaste</div>
+    <input type="tel" id="inp-consulta-tel" placeholder="Ej: 3001234567" maxlength="15">
+    <div id="consulta-resultados"></div>
+    <div id="modal-actions" style="display:flex;gap:8px;margin-top:1.25rem;">
+      <button class="m-btn" id="btn-consulta-cerrar" style="flex:1;border-radius:8px;padding:11px;cursor:pointer;font-size:14px;border:1px solid #2a4a6a;background:transparent;color:#8ab4cc;font-weight:700;">Cerrar</button>
+      <button class="m-btn" id="btn-consulta-buscar" style="flex:1;border-radius:8px;padding:11px;cursor:pointer;font-size:14px;border:none;background:#d4a017;color:#0a1628;font-weight:700;">Buscar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script>
 var WHATSAPP_NUM = '573135341659';
 var VENDEDOR = 'X';
 var GRUPO = '1';
+
+var TEMAS = {
+  '#0a1628': { acento: '#00d4ff', secundario: '#f5c842' },
+  '#0a2010': { acento: '#4dff91', secundario: '#f5c842' },
+  '#1a0a28': { acento: '#cc88ff', secundario: '#f5c842' },
+  '#1a1000': { acento: '#ffcc44', secundario: '#ff9944' },
+  '#1a0808': { acento: '#ff6666', secundario: '#ffaa44' },
+  '#001a1a': { acento: '#00ffcc', secundario: '#f5c842' }
+};
+
+function aplicarTema(bgColor) {
+  document.body.style.background = bgColor;
+  document.getElementById('card').style.background = bgColor;
+  document.getElementById('pago-card').style.background = bgColor;
+  var tema = TEMAS[bgColor] || TEMAS['#0a1628'];
+  var els = document.querySelectorAll('.premio-mayor-val, .pm-val, #loteria-nombre, .tab-btn.active');
+  for (var i = 0; i < els.length; i++) els[i].style.color = tema.acento;
+  document.getElementById('logo-texto').style.color = tema.secundario;
+}
 
 var CHEST_PAGADO = '<svg viewBox="0 0 40 34" width="26" height="22" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="17" width="34" height="15" rx="2.5" fill="#1a7a3a"/><rect x="3" y="17" width="34" height="6" rx="1" fill="#25a050"/><path d="M3 16 Q3 4 5 4 H35 Q37 4 37 16 Q37 10 20 10 Q3 10 3 16Z" fill="#3dbd6e"/><rect x="3" y="4" width="34" height="12" rx="2.5" fill="#2db560"/><rect x="15" y="14" width="10" height="8" rx="2" fill="#0f5225"/><circle cx="20" cy="18" r="1.5" fill="#a8f0c0"/></svg>';
 
@@ -326,7 +373,7 @@ function mostrarConfirmacion(num, valor, apodo) {
   document.getElementById('ok-msg').textContent =
     'Reservaste el numero ' + numStr + ' de la rifa de ' + precioTxt + '. Ahora escribenos por WhatsApp para confirmar tu pago y quedar participando.';
   var texto = encodeURIComponent(
-    'Hola! Soy ' + apodo + ', acabo de reservar el numero ' + numStr + ' de la rifa de ' + precioTxt + ' en Caja Dorada. Ya voy a hacer el pago.'
+    'Hola! Soy ' + apodo + '. Ya reserve mi numero ' + numStr + ' de la rifa de ' + precioTxt + ' en Caja Dorada 🍀'
   );
   document.getElementById('ok-btn-wpp').href = 'https://wa.me/' + WHATSAPP_NUM + '?text=' + texto;
   document.getElementById('ok-modal-bg').classList.add('open');
@@ -334,6 +381,59 @@ function mostrarConfirmacion(num, valor, apodo) {
 
 function cerrarOkModal() {
   document.getElementById('ok-modal-bg').classList.remove('open');
+}
+
+function soloDigitos(s) {
+  return (s || '').replace(/\D/g, '');
+}
+
+function abrirConsulta() {
+  document.getElementById('inp-consulta-tel').value = '';
+  document.getElementById('consulta-resultados').innerHTML = '';
+  document.getElementById('consulta-modal-bg').style.display = 'flex';
+  setTimeout(function() { document.getElementById('inp-consulta-tel').focus(); }, 150);
+}
+
+function cerrarConsulta() {
+  document.getElementById('consulta-modal-bg').style.display = 'none';
+}
+
+function buscarBoletos() {
+  var telBuscado = soloDigitos(document.getElementById('inp-consulta-tel').value);
+  var resultados = document.getElementById('consulta-resultados');
+  if (telBuscado.length < 7) {
+    resultados.innerHTML = '<div id="consulta-vacio">Escribe un numero de telefono valido.</div>';
+    return;
+  }
+  // compara por los ultimos 10 digitos para ignorar formatos con +57, espacios, etc.
+  var sufijo = telBuscado.slice(-10);
+  var encontrados = [];
+  ['5k', '10k', '20k'].forEach(function(valor) {
+    var numeros = dataCache[valor] || {};
+    Object.keys(numeros).forEach(function(k) {
+      if (k === 'null') return;
+      var dato = numeros[k];
+      if (!dato || dato.tipo === 'fake') return;
+      var telGuardado = soloDigitos(dato.tel).slice(-10);
+      if (telGuardado && telGuardado === sufijo) {
+        encontrados.push({ num: k, valor: valor, pago: dato.pago });
+      }
+    });
+  });
+  if (encontrados.length === 0) {
+    resultados.innerHTML = '<div id="consulta-vacio">No encontramos boletos con ese telefono.</div>';
+    return;
+  }
+  var html = '';
+  encontrados.forEach(function(r) {
+    var pagado = r.pago === 'pagado';
+    html += '<div class="res-item">' +
+      '<div><div class="res-num">' + String(r.num).padStart(2, '0') + '</div>' +
+      '<div class="res-tier">Rifa de $' + r.valor.replace('k', '.000') + '</div></div>' +
+      '<div class="res-estado ' + (pagado ? 'pagado' : 'pendiente') + '">' + (pagado ? 'Pagado' : 'Sin pagar') + '</div>' +
+      '</div>';
+  });
+  resultados.innerHTML = html;
 }
 
 function cambiarTab(valor) {
@@ -368,13 +468,13 @@ window.addEventListener('load', function() {
   db.ref('config').once('value').then(function(snap) {
     var cfg = snap.val() || {};
     if (cfg.loteria) document.getElementById('loteria-nombre').textContent = cfg.loteria;
-    if (cfg.gridColor) document.body.style.background = cfg.gridColor;
+    if (cfg.gridColor) aplicarTema(cfg.gridColor);
   });
   db.ref('config/loteria').on('value', function(snap) {
     if (snap.val()) document.getElementById('loteria-nombre').textContent = snap.val();
   });
   db.ref('config/gridColor').on('value', function(snap) {
-    if (snap.val()) document.body.style.background = snap.val();
+    if (snap.val()) aplicarTema(snap.val());
   });
 
   ['5k', '10k', '20k'].forEach(function(valor) {
@@ -398,7 +498,13 @@ window.addEventListener('load', function() {
   document.getElementById('ok-btn-cerrar').onclick = cerrarOkModal;
   document.getElementById('modal-bg').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
   document.getElementById('ok-modal-bg').addEventListener('click', function(e) { if (e.target === this) cerrarOkModal(); });
-  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeModal(); } });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeModal(); cerrarConsulta(); } });
+
+  document.getElementById('btn-consultar').onclick = abrirConsulta;
+  document.getElementById('btn-consulta-cerrar').onclick = cerrarConsulta;
+  document.getElementById('btn-consulta-buscar').onclick = buscarBoletos;
+  document.getElementById('inp-consulta-tel').addEventListener('keydown', function(e) { if (e.key === 'Enter') buscarBoletos(); });
+  document.getElementById('consulta-modal-bg').addEventListener('click', function(e) { if (e.target === this) cerrarConsulta(); });
 
   var copyBtns = document.querySelectorAll('.btn-copy');
   for (var c = 0; c < copyBtns.length; c++) {

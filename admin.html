@@ -131,6 +131,7 @@
 
 <div id="main-tabs">
   <button class="main-tab active" id="tab-hoy">Hoy</button>
+  <button class="main-tab" id="tab-web">Compras Web</button>
   <button class="main-tab" id="tab-hist">Historial (7 dias)</button>
 </div>
 
@@ -256,9 +257,62 @@ function cargarDatos() {
 function showTab(tab) {
   tabActual = tab;
   document.getElementById('tab-hoy').classList.toggle('active', tab === 'hoy');
+  document.getElementById('tab-web').classList.toggle('active', tab === 'web');
   document.getElementById('tab-hist').classList.toggle('active', tab === 'historial');
   if (tab === 'hoy') renderTabHoy();
+  else if (tab === 'web') renderComprasWeb();
   else renderHistorial();
+}
+
+function renderComprasWeb() {
+  var content = document.getElementById('content');
+  var filas = [];
+  var keys = Object.keys(allData);
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    var numeros = (allData[key] && allData[key].numeros) ? allData[key].numeros : {};
+    var nkeys = Object.keys(numeros);
+    for (var j = 0; j < nkeys.length; j++) {
+      var num = nkeys[j];
+      if (num === 'null') continue;
+      var dato = numeros[num];
+      if (!dato || dato.tipo === 'fake' || dato.origen !== 'web') continue;
+      filas.push({ rifa: key, num: num, dato: dato });
+    }
+  }
+  if (filas.length === 0) {
+    content.innerHTML = '<div class="empty-state">No hay compras hechas por la pagina web hoy.</div>';
+    return;
+  }
+  // Sin pagar primero, despues por hora
+  filas.sort(function(a, b) {
+    var aPend = a.dato.pago !== 'pagado';
+    var bPend = b.dato.pago !== 'pagado';
+    if (aPend !== bPend) return aPend ? -1 : 1;
+    return (a.dato.ts || 0) - (b.dato.ts || 0);
+  });
+  var porContactar = filas.filter(function(f) { return f.dato.pago !== 'pagado'; }).length;
+  var filasHtml = '';
+  for (var k = 0; k < filas.length; k++) {
+    var f = filas[k];
+    var pagado = f.dato.pago === 'pagado';
+    var necesitaContacto = !pagado;
+    filasHtml += '<tr' + (necesitaContacto ? ' class="row-contactar"' : '') + '>';
+    filasHtml += '<td class="num-col">' + String(f.num).padStart(2, '0') + '</td>';
+    filasHtml += '<td>' + keyToLabel(f.rifa) + '</td>';
+    filasHtml += '<td>' + (pagado ? '<span class="badge-pagado">Pagado</span>' : '<span class="badge-pendiente">Sin pagar</span>') + '</td>';
+    filasHtml += '<td>' + (f.dato.apodo || '-') + '</td>';
+    filasHtml += '<td>' + (f.dato.tel || '-') + '</td>';
+    filasHtml += '<td>' + tsToHora(f.dato.ts) + '</td></tr>';
+  }
+  content.innerHTML =
+    '<div class="rifa-block">' +
+    '<div class="rifa-header"><div>' +
+    '<div class="rifa-name">Todas las compras web de hoy</div>' +
+    '<div class="rifa-stats">' + filas.length + ' compras - ' + porContactar + ' por contactar</div>' +
+    '</div></div>' +
+    '<table><thead><tr><th>#</th><th>Rifa</th><th>Pago</th><th>Apodo</th><th>Telefono</th><th>Hora</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' +
+    '</div>';
 }
 
 function seleccionarVendedor(key) {
@@ -541,6 +595,7 @@ function initApp() {
   cargarDatos();
 
   document.getElementById('tab-hoy').onclick = function() { showTab('hoy'); };
+  document.getElementById('tab-web').onclick = function() { showTab('web'); };
   document.getElementById('tab-hist').onclick = function() { showTab('historial'); };
   document.getElementById('btn-export').onclick = abrirExportModal;
   document.getElementById('btn-reset-all').onclick = function() { confirmarReset(null); };
