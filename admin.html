@@ -46,6 +46,9 @@
     .badge-fake { display: inline-block; background: rgba(212,160,23,0.15); color: #d4a017; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     .badge-pagado { display: inline-block; background: rgba(58,184,110,0.15); color: #3ab86e; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     .badge-pendiente { display: inline-block; background: rgba(232,200,58,0.15); color: #c8a010; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    .badge-web { display: inline-block; background: rgba(0,212,255,0.15); color: #00d4ff; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .badge-manual { display: inline-block; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.35); border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+    tr.row-contactar { background: rgba(0,212,255,0.06); box-shadow: inset 3px 0 0 #00d4ff; }
     .empty-state { text-align: center; padding: 2.5rem; color: rgba(255,255,255,0.3); font-size: 13px; }
     .hist-day { background: #0d1e35; border-radius: 10px; margin-bottom: 0.75rem; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
     .hist-day-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; cursor: pointer; }
@@ -73,9 +76,30 @@
     .exp-btn-primary { border-color: #00d4ff; background: rgba(0,212,255,0.1); color: #00d4ff; font-weight: 600; }
     .exp-btn-back { color: #8ab4cc; border-color: #2a4a6a; }
     .exp-btn-cancel { color: rgba(255,255,255,0.35); border-color: #2a4a6a; background: transparent; margin-top: 4px; }
+
+    #screen-login { max-width: 320px; margin: 3rem auto 0; background: #0d1e35; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1.5rem; }
+    #screen-login h1 { text-align: center; margin-bottom: 4px; }
+    #screen-login .sub { text-align: center; }
+    #screen-login label { font-size: 12px; color: #8ab4cc; display: block; margin: 14px 0 5px; }
+    #screen-login input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid #2a4a6a; border-radius: 8px; color: #fff; padding: 10px 12px; font-size: 15px; outline: none; }
+    #screen-login input:focus { border-color: #00d4ff; }
+    #btn-signin { width: 100%; margin-top: 1.25rem; background: #d4a017; border: none; border-radius: 10px; color: #0a1628; font-weight: 700; font-size: 15px; padding: 12px; cursor: pointer; }
+    #login-error { font-size: 12px; color: #f09595; margin-top: 8px; text-align: center; min-height: 16px; }
+    #btn-signout { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); font-size: 11px; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: auto; }
   </style>
 </head>
 <body>
+
+<div id="screen-login">
+  <h1>Caja Dorada</h1>
+  <div class="sub">Panel de administrador</div>
+  <label>Contrasena</label>
+  <input type="password" id="inp-password" placeholder="Contrasena" />
+  <div id="login-error"></div>
+  <button id="btn-signin">Entrar</button>
+</div>
+
+<div id="app-content" style="display:none;">
 
 <h1>Caja Dorada</h1>
 <div class="sub">Panel de administrador</div>
@@ -83,6 +107,7 @@
 <div id="sync-bar">
   <div id="sync-dot" class="loading"></div>
   <span id="sync-text">Conectando...</span>
+  <button id="btn-signout">Cerrar sesion</button>
 </div>
 
 <div id="loteria-bar">
@@ -147,8 +172,11 @@
   </div>
 </div>
 
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 var db, allData, historialData, tabActual, vendedorActual, resetKey;
@@ -246,21 +274,25 @@ function buildTabla(numeros) {
     if (dato) {
       var esFake = dato.tipo === 'fake';
       var pagado = dato.pago === 'pagado';
+      var esWeb = dato.origen === 'web';
+      var necesitaContacto = !esFake && esWeb && !pagado;
       var estadoHtml = esFake ? '<span class="badge-fake">Fake</span>' : '<span class="badge-sold">Vendido</span>';
       var pagoHtml = esFake ? '-' : (pagado ? '<span class="badge-pagado">Pagado</span>' : '<span class="badge-pendiente">Sin pagar</span>');
-      filas += '<tr><td class="num-col">' + num + '</td>';
+      var origenHtml = esFake ? '-' : (esWeb ? '<span class="badge-web">Web' + (necesitaContacto ? ' - escribir' : '') + '</span>' : '<span class="badge-manual">Manual</span>');
+      filas += '<tr' + (necesitaContacto ? ' class="row-contactar"' : '') + '><td class="num-col">' + num + '</td>';
       filas += '<td>' + estadoHtml + '</td>';
       filas += '<td>' + pagoHtml + '</td>';
+      filas += '<td>' + origenHtml + '</td>';
       filas += '<td>' + (esFake ? '-' : (dato.apodo || '-')) + '</td>';
       filas += '<td>' + (esFake ? '-' : (dato.tel || '-')) + '</td>';
       filas += '<td>' + tsToHora(dato.ts) + '</td></tr>';
     } else {
       filas += '<tr><td class="num-col">' + num + '</td>';
       filas += '<td><span class="badge-free">Libre</span></td>';
-      filas += '<td>-</td><td>-</td><td>-</td><td>-</td></tr>';
+      filas += '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
     }
   }
-  return '<table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Apodo</th><th>Telefono</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table>';
+  return '<table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Origen</th><th>Apodo</th><th>Telefono</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table>';
 }
 
 function renderTabHoy() {
@@ -282,16 +314,22 @@ function renderTabHoy() {
   var key = vendedorActual;
   var numeros = (allData[key] && allData[key].numeros) ? allData[key].numeros : {};
   var vendidos = 0;
+  var porContactar = 0;
   var nkeys = Object.keys(numeros);
   for (var j = 0; j < nkeys.length; j++) {
-    if (nkeys[j] !== 'null') vendidos++;
+    if (nkeys[j] === 'null') continue;
+    vendidos++;
+    var d = numeros[nkeys[j]];
+    if (d && d.origen === 'web' && d.pago !== 'pagado' && d.tipo !== 'fake') porContactar++;
   }
+  var statsTxt = vendidos + ' vendidos - ' + (100 - vendidos) + ' disponibles';
+  if (porContactar > 0) statsTxt += ' - <span style="color:#00d4ff;font-weight:600;">' + porContactar + ' por contactar (web)</span>';
   content.innerHTML =
     '<div class="vendor-tabs-wrap"><div class="vendor-tabs" id="vendor-tabs-inner">' + tabsHtml + '</div></div>' +
     '<div class="rifa-block">' +
     '<div class="rifa-header">' +
     '<div><div class="rifa-name">' + keyToLabel(key) + '</div>' +
-    '<div class="rifa-stats">' + vendidos + ' vendidos - ' + (100 - vendidos) + ' disponibles</div></div>' +
+    '<div class="rifa-stats">' + statsTxt + '</div></div>' +
     '<button class="btn-reset-one" data-reset="' + key + '">Resetear</button>' +
     '</div>' + buildTabla(numeros) + '</div>';
 
@@ -447,7 +485,7 @@ function exportarExcel(fuente) {
     var key = keys[i];
     var valorNum = valorDesdeKey(key);
     var numeros = (datos[key] && datos[key].numeros) ? datos[key].numeros : {};
-    var rows = [['Numero', 'Estado', 'Pago', 'Apodo', 'Telefono', 'Hora', 'Valor']];
+    var rows = [['Numero', 'Estado', 'Pago', 'Origen', 'Apodo', 'Telefono', 'Hora', 'Valor']];
     var total = 0;
     for (var j = 0; j < 100; j++) {
       var dato = numeros[j] || numeros[String(j)];
@@ -455,32 +493,42 @@ function exportarExcel(fuente) {
       if (dato) {
         var esFake = dato.tipo === 'fake';
         var pagado = dato.pago === 'pagado';
+        var esWeb = dato.origen === 'web';
         var valor = (!esFake && pagado) ? valorNum : 0;
         total += valor;
-        rows.push([num, esFake ? 'Fake' : 'Vendido', esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar'), esFake ? '-' : (dato.apodo || ''), esFake ? '-' : (dato.tel || ''), tsToHora(dato.ts), valor]);
+        rows.push([num, esFake ? 'Fake' : 'Vendido', esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar'), esFake ? '-' : (esWeb ? 'Web' : 'Manual'), esFake ? '-' : (dato.apodo || ''), esFake ? '-' : (dato.tel || ''), tsToHora(dato.ts), valor]);
       } else {
-        rows.push([num, 'Libre', '', '', '', '', 0]);
+        rows.push([num, 'Libre', '', '', '', '', '', 0]);
       }
     }
-    rows.push(['', '', '', '', '', 'TOTAL RECAUDADO', total]);
+    rows.push(['', '', '', '', '', '', 'TOTAL RECAUDADO', total]);
     var ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{wch:8},{wch:10},{wch:12},{wch:18},{wch:15},{wch:8},{wch:16}];
+    ws['!cols'] = [{wch:8},{wch:10},{wch:12},{wch:10},{wch:18},{wch:15},{wch:8},{wch:16}];
     XLSX.utils.book_append_sheet(wb, ws, keyToLabel(key).slice(0, 31));
   }
   XLSX.writeFile(wb, nombreArchivo);
 }
 
-window.addEventListener('load', function() {
-  firebase.initializeApp({
-    apiKey: "AIzaSyDKdXXfrJaWa9rup7EbOVU_eIYq__8gZa8",
-    authDomain: "caja-dorada.firebaseapp.com",
-    databaseURL: "https://caja-dorada-default-rtdb.firebaseio.com",
-    projectId: "caja-dorada",
-    storageBucket: "caja-dorada.firebasestorage.app",
-    messagingSenderId: "218327954995",
-    appId: "1:218327954995:web:868569160171f2380c5546"
+var ADMIN_EMAIL = 'fabianquirogaxd@gmail.com';
+var appInitialized = false;
+
+function iniciarSesion() {
+  var pass = document.getElementById('inp-password').value;
+  var err = document.getElementById('login-error');
+  if (!pass) { err.textContent = 'Escribe la contrasena'; return; }
+  err.textContent = '';
+  firebase.auth().signInWithEmailAndPassword(ADMIN_EMAIL, pass).catch(function() {
+    err.textContent = 'Contrasena incorrecta';
   });
-  db = firebase.database();
+}
+
+function cerrarSesion() {
+  firebase.auth().signOut();
+}
+
+function initApp() {
+  if (appInitialized) return;
+  appInitialized = true;
 
   db.ref('.info/connected').on('value', function(snap) {
     setSyncStatus(snap.val() ? 'ok' : 'err', snap.val() ? 'Conectado' : 'Sin conexion');
@@ -529,6 +577,36 @@ window.addEventListener('load', function() {
   document.getElementById('export-modal-bg').addEventListener('click', function(e) {
     if (e.target === this) cerrarExportModal();
   });
+}
+
+window.addEventListener('load', function() {
+  firebase.initializeApp({
+    apiKey: "AIzaSyDKdXXfrJaWa9rup7EbOVU_eIYq__8gZa8",
+    authDomain: "caja-dorada.firebaseapp.com",
+    databaseURL: "https://caja-dorada-default-rtdb.firebaseio.com",
+    projectId: "caja-dorada",
+    storageBucket: "caja-dorada.firebasestorage.app",
+    messagingSenderId: "218327954995",
+    appId: "1:218327954995:web:868569160171f2380c5546"
+  });
+  db = firebase.database();
+
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      document.getElementById('screen-login').style.display = 'none';
+      document.getElementById('app-content').style.display = 'block';
+      initApp();
+    } else {
+      document.getElementById('screen-login').style.display = 'block';
+      document.getElementById('app-content').style.display = 'none';
+    }
+  });
+
+  document.getElementById('btn-signin').onclick = iniciarSesion;
+  document.getElementById('inp-password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') iniciarSesion();
+  });
+  document.getElementById('btn-signout').onclick = cerrarSesion;
 });
 </script>
 </body>
