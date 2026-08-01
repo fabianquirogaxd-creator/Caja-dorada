@@ -36,7 +36,8 @@
     .rifa-name { font-size: 14px; font-weight: 600; color: #00d4ff; }
     .rifa-stats { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
     .btn-reset-one { padding: 5px 12px; border-radius: 6px; border: none; background: #8b1a1a; color: #fff; font-size: 11px; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 12px; }
     th { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.4); font-weight: 500; padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
     td { padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); color: rgba(255,255,255,0.8); }
     tr:last-child td { border-bottom: none; }
@@ -312,7 +313,7 @@ function renderComprasWeb() {
     '<div class="rifa-name">Todas las compras web de hoy</div>' +
     '<div class="rifa-stats">' + filas.length + ' compras - ' + porContactar + ' por contactar</div>' +
     '</div></div>' +
-    '<table><thead><tr><th>#</th><th>Rifa</th><th>Pago</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Hora</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' +
+    '<div class="table-scroll"><table><thead><tr><th>#</th><th>Rifa</th><th>Pago</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Hora</th></tr></thead><tbody>' + filasHtml + '</tbody></table></div>' +
     '</div>';
 }
 
@@ -348,7 +349,7 @@ function buildTabla(numeros) {
       filas += '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
     }
   }
-  return '<table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Origen</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table>';
+  return '<div class="table-scroll"><table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Origen</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table></div>';
 }
 
 function renderTabHoy() {
