@@ -125,6 +125,10 @@
     #pago-si.selected { background: rgba(93,202,165,0.25); border-color: #5DCAA5; color: #5DCAA5; }
     #pago-no.selected { background: rgba(232,90,90,0.25); border-color: #e85a5a; color: #e85a5a; }
 
+    /* TOGGLE CLIENTE NUEVO */
+    #btn-cliente-nuevo { width: 100%; margin-top: 8px; padding: 10px; border-radius: 8px; border: 2px solid rgba(0,212,255,0.3); background: rgba(0,212,255,0.1); color: rgba(0,212,255,0.6); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    #btn-cliente-nuevo.selected { background: rgba(0,212,255,0.25); border-color: #00d4ff; color: #00d4ff; }
+
     #modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
     .m-btn { flex: 1; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 14px; border: none; font-weight: 600; }
     #btn-cancel { background: transparent; border: 1px solid #2a4a6a; color: #8ab4cc; }
@@ -311,6 +315,7 @@
       <button class="pago-btn" id="pago-si" onclick="selPago('pagado')">Pagado</button>
       <button class="pago-btn" id="pago-no" onclick="selPago('pendiente')">Sin pagar</button>
     </div>
+    <button id="btn-cliente-nuevo" onclick="toggleClienteNuevo()">Cliente nuevo</button>
     <div id="modal-actions">
       <button class="m-btn" id="btn-cancel">Cancelar</button>
       <button class="m-btn" id="btn-desmarcar" style="display:none">Desmarcar</button>
@@ -393,9 +398,15 @@ var PREMIOS = {
   '50k': { mayor: "$2.500.000",  p1: "$250.000", p2: "$250.000", p3: "$250.000" }
 };
 
-var db, rifaRef, selectedNum, pagoEstado, esEdicion;
+var db, rifaRef, selectedNum, pagoEstado, esEdicion, clienteNuevo;
 pagoEstado = 'pendiente';
 esEdicion = false;
+clienteNuevo = false;
+
+function toggleClienteNuevo() {
+  clienteNuevo = !clienteNuevo;
+  document.getElementById('btn-cliente-nuevo').classList.toggle('selected', clienteNuevo);
+}
 
 function setSyncStatus(type, text) {
   document.getElementById('sync-dot').className = type;
@@ -537,11 +548,15 @@ function openModal(num) {
       document.getElementById('inp-apodo').value = dato.apodo || '';
       document.getElementById('inp-tel').value = dato.tel || '';
       selPago(dato.pago || 'pendiente');
+      clienteNuevo = !!dato.nuevo;
+      document.getElementById('btn-cliente-nuevo').classList.toggle('selected', clienteNuevo);
     });
   } else {
     document.getElementById('inp-apodo').value = '';
     document.getElementById('inp-tel').value = '';
     selPago('pendiente');
+    clienteNuevo = false;
+    document.getElementById('btn-cliente-nuevo').classList.remove('selected');
     setTimeout(function() { document.getElementById('inp-apodo').focus(); }, 150);
   }
 
@@ -589,7 +604,7 @@ function confirmSale() {
   var cell = document.getElementById('cell-' + numToSave);
   cell.classList.add('loading');
   closeModal();
-  rifaRef.child('numeros/' + numToSave).set({ apodo: apodo, tel: tel, pago: pagoEstado, ts: Date.now() })
+  rifaRef.child('numeros/' + numToSave).set({ apodo: apodo, tel: tel, pago: pagoEstado, nuevo: clienteNuevo, ts: Date.now() })
     .catch(function() {
       cell.classList.remove('loading');
       setSyncStatus('err', 'Error al guardar - revisa conexion');

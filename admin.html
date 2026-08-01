@@ -303,6 +303,7 @@ function renderComprasWeb() {
     filasHtml += '<td>' + (pagado ? '<span class="badge-pagado">Pagado</span>' : '<span class="badge-pendiente">Sin pagar</span>') + '</td>';
     filasHtml += '<td>' + (f.dato.apodo || '-') + '</td>';
     filasHtml += '<td>' + (f.dato.tel || '-') + '</td>';
+    filasHtml += '<td>' + (f.dato.nuevo && pagado ? '<span class="badge-web">Nuevo</span>' : '-') + '</td>';
     filasHtml += '<td>' + tsToHora(f.dato.ts) + '</td></tr>';
   }
   content.innerHTML =
@@ -311,7 +312,7 @@ function renderComprasWeb() {
     '<div class="rifa-name">Todas las compras web de hoy</div>' +
     '<div class="rifa-stats">' + filas.length + ' compras - ' + porContactar + ' por contactar</div>' +
     '</div></div>' +
-    '<table><thead><tr><th>#</th><th>Rifa</th><th>Pago</th><th>Apodo</th><th>Telefono</th><th>Hora</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' +
+    '<table><thead><tr><th>#</th><th>Rifa</th><th>Pago</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Hora</th></tr></thead><tbody>' + filasHtml + '</tbody></table>' +
     '</div>';
 }
 
@@ -339,14 +340,15 @@ function buildTabla(numeros) {
       filas += '<td>' + origenHtml + '</td>';
       filas += '<td>' + (esFake ? '-' : (dato.apodo || '-')) + '</td>';
       filas += '<td>' + (esFake ? '-' : (dato.tel || '-')) + '</td>';
+      filas += '<td>' + (!esFake && dato.nuevo && pagado ? '<span class="badge-web">Nuevo</span>' : '-') + '</td>';
       filas += '<td>' + tsToHora(dato.ts) + '</td></tr>';
     } else {
       filas += '<tr><td class="num-col">' + num + '</td>';
       filas += '<td><span class="badge-free">Libre</span></td>';
-      filas += '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
+      filas += '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
     }
   }
-  return '<table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Origen</th><th>Apodo</th><th>Telefono</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table>';
+  return '<table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Origen</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table>';
 }
 
 function renderTabHoy() {
@@ -539,7 +541,7 @@ function exportarExcel(fuente) {
     var key = keys[i];
     var valorNum = valorDesdeKey(key);
     var numeros = (datos[key] && datos[key].numeros) ? datos[key].numeros : {};
-    var rows = [['Numero', 'Estado', 'Pago', 'Origen', 'Apodo', 'Telefono', 'Hora', 'Valor']];
+    var rows = [['Numero', 'Estado', 'Pago', 'Origen', 'Apodo', 'Telefono', 'Nuevo', 'Hora', 'Valor']];
     var total = 0;
     for (var j = 0; j < 100; j++) {
       var dato = numeros[j] || numeros[String(j)];
@@ -550,12 +552,12 @@ function exportarExcel(fuente) {
         var esWeb = dato.origen === 'web';
         var valor = (!esFake && pagado) ? valorNum : 0;
         total += valor;
-        rows.push([num, esFake ? 'Fake' : 'Vendido', esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar'), esFake ? '-' : (esWeb ? 'Web' : 'Manual'), esFake ? '-' : (dato.apodo || ''), esFake ? '-' : (dato.tel || ''), tsToHora(dato.ts), valor]);
+        rows.push([num, esFake ? 'Fake' : 'Vendido', esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar'), esFake ? '-' : (esWeb ? 'Web' : 'Manual'), esFake ? '-' : (dato.apodo || ''), esFake ? '-' : (dato.tel || ''), esFake ? '-' : (dato.nuevo && pagado ? 'Nuevo' : ''), tsToHora(dato.ts), valor]);
       } else {
-        rows.push([num, 'Libre', '', '', '', '', '', 0]);
+        rows.push([num, 'Libre', '', '', '', '', '', '', 0]);
       }
     }
-    rows.push(['', '', '', '', '', '', 'TOTAL RECAUDADO', total]);
+    rows.push(['', '', '', '', '', '', '', 'TOTAL RECAUDADO', total]);
     var ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{wch:8},{wch:10},{wch:12},{wch:10},{wch:18},{wch:15},{wch:8},{wch:16}];
     XLSX.utils.book_append_sheet(wb, ws, keyToLabel(key).slice(0, 31));
