@@ -215,6 +215,17 @@ function keyToLabel(key) {
   return (vendedor + ' ' + valor + ' ' + grupo).trim();
 }
 
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function sanitizeCell(s) {
+  var v = String(s == null ? '' : s);
+  return /^[=+\-@]/.test(v) ? "'" + v : v;
+}
+
 function limpiarClave(k) {
   return k.replace(/[.#$[\]\/]/g, '_');
 }
@@ -300,10 +311,10 @@ function renderComprasWeb() {
     var necesitaContacto = !pagado;
     filasHtml += '<tr' + (necesitaContacto ? ' class="row-contactar"' : '') + '>';
     filasHtml += '<td class="num-col">' + String(f.num).padStart(2, '0') + '</td>';
-    filasHtml += '<td>' + keyToLabel(f.rifa) + '</td>';
+    filasHtml += '<td>' + escapeHtml(keyToLabel(f.rifa)) + '</td>';
     filasHtml += '<td>' + (pagado ? '<span class="badge-pagado">Pagado</span>' : '<span class="badge-pendiente">Sin pagar</span>') + '</td>';
-    filasHtml += '<td>' + (f.dato.apodo || '-') + '</td>';
-    filasHtml += '<td>' + (f.dato.tel || '-') + '</td>';
+    filasHtml += '<td>' + escapeHtml(f.dato.apodo || '-') + '</td>';
+    filasHtml += '<td>' + escapeHtml(f.dato.tel || '-') + '</td>';
     filasHtml += '<td>' + (f.dato.nuevo && pagado ? '<span class="badge-web">Nuevo</span>' : '-') + '</td>';
     filasHtml += '<td>' + tsToHora(f.dato.ts) + '</td></tr>';
   }
@@ -339,8 +350,8 @@ function buildTabla(numeros) {
       filas += '<td>' + estadoHtml + '</td>';
       filas += '<td>' + pagoHtml + '</td>';
       filas += '<td>' + origenHtml + '</td>';
-      filas += '<td>' + (esFake ? '-' : (dato.apodo || '-')) + '</td>';
-      filas += '<td>' + (esFake ? '-' : (dato.tel || '-')) + '</td>';
+      filas += '<td>' + (esFake ? '-' : escapeHtml(dato.apodo || '-')) + '</td>';
+      filas += '<td>' + (esFake ? '-' : escapeHtml(dato.tel || '-')) + '</td>';
       filas += '<td>' + (!esFake && dato.nuevo && pagado ? '<span class="badge-web">Nuevo</span>' : '-') + '</td>';
       filas += '<td>' + tsToHora(dato.ts) + '</td></tr>';
     } else {
@@ -366,7 +377,7 @@ function renderTabHoy() {
   for (var i = 0; i < keys.length; i++) {
     var k = keys[i];
     var active = k === vendedorActual ? ' active' : '';
-    tabsHtml += '<button class="vendor-tab' + active + '" data-key="' + k + '">' + keyToLabel(k) + '</button>';
+    tabsHtml += '<button class="vendor-tab' + active + '" data-key="' + escapeHtml(k) + '">' + escapeHtml(keyToLabel(k)) + '</button>';
   }
   var key = vendedorActual;
   var numeros = (allData[key] && allData[key].numeros) ? allData[key].numeros : {};
@@ -385,9 +396,9 @@ function renderTabHoy() {
     '<div class="vendor-tabs-wrap"><div class="vendor-tabs" id="vendor-tabs-inner">' + tabsHtml + '</div></div>' +
     '<div class="rifa-block">' +
     '<div class="rifa-header">' +
-    '<div><div class="rifa-name">' + keyToLabel(key) + '</div>' +
+    '<div><div class="rifa-name">' + escapeHtml(keyToLabel(key)) + '</div>' +
     '<div class="rifa-stats">' + statsTxt + '</div></div>' +
-    '<button class="btn-reset-one" data-reset="' + key + '">Resetear</button>' +
+    '<button class="btn-reset-one" data-reset="' + escapeHtml(key) + '">Resetear</button>' +
     '</div>' + buildTabla(numeros) + '</div>';
 
   document.getElementById('vendor-tabs-inner').addEventListener('click', function(e) {
@@ -431,7 +442,7 @@ function renderHistorial() {
       }
       rifasHtml += '<div class="rifa-block">';
       rifasHtml += '<div class="rifa-header"><div>';
-      rifasHtml += '<div class="rifa-name">' + keyToLabel(rk) + '</div>';
+      rifasHtml += '<div class="rifa-name">' + escapeHtml(keyToLabel(rk)) + '</div>';
       rifasHtml += '<div class="rifa-stats">' + vendidos2 + ' vendidos - ' + (100 - vendidos2) + ' disponibles</div>';
       rifasHtml += '</div></div>' + buildTabla(numeros2) + '</div>';
     }
@@ -553,7 +564,7 @@ function exportarExcel(fuente) {
         var esWeb = dato.origen === 'web';
         var valor = (!esFake && pagado) ? valorNum : 0;
         total += valor;
-        rows.push([num, esFake ? 'Fake' : 'Vendido', esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar'), esFake ? '-' : (esWeb ? 'Web' : 'Manual'), esFake ? '-' : (dato.apodo || ''), esFake ? '-' : (dato.tel || ''), esFake ? '-' : (dato.nuevo && pagado ? 'Nuevo' : ''), tsToHora(dato.ts), valor]);
+        rows.push([num, esFake ? 'Fake' : 'Vendido', esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar'), esFake ? '-' : (esWeb ? 'Web' : 'Manual'), esFake ? '-' : sanitizeCell(dato.apodo || ''), esFake ? '-' : sanitizeCell(dato.tel || ''), esFake ? '-' : (dato.nuevo && pagado ? 'Nuevo' : ''), tsToHora(dato.ts), valor]);
       } else {
         rows.push([num, 'Libre', '', '', '', '', '', '', 0]);
       }
