@@ -141,6 +141,30 @@
     .ley-dot { width: 10px; height: 10px; border-radius: 2px; }
     .ley-dot.pagado { background: #3ab86e; }
     .ley-dot.pendiente { background: #e8c83a; }
+
+    /* BUSCAR CLIENTE */
+    #btn-buscar-cliente { width: 100%; margin-top: 10px; background: transparent; border: 1px solid #00d4ff; border-radius: 10px; color: #00d4ff; font-weight: 600; font-size: 15px; padding: 12px; cursor: pointer; }
+    #btn-buscar-cliente:active { background: rgba(0,212,255,0.1); }
+    #screen-buscar { background: #0a1628; border-radius: 14px; padding: 1.25rem; display: none; }
+    .buscar-row { display: flex; gap: 8px; margin-top: 10px; }
+    .buscar-row .inp { flex: 1; }
+    #btn-buscar-ir { background: #d4a017; border: none; border-radius: 8px; color: #0a1628; font-weight: 700; font-size: 14px; padding: 0 16px; cursor: pointer; }
+    #buscar-hint { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 6px; }
+    #buscar-estado { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 12px; text-align: center; min-height: 16px; }
+    .cli-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-top: 10px; }
+    .cli-nombre { font-size: 16px; font-weight: 700; color: #fff; }
+    .cli-tel { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+    .cli-tabla { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .cli-tabla-nombre { font-size: 12px; color: #00d4ff; font-weight: 600; margin-bottom: 6px; }
+    .cli-nums { display: flex; flex-wrap: wrap; gap: 5px; }
+    .cli-num { font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 6px; border: 1px solid; }
+    .cli-num.pagado { background: #e8f8ee; border-color: #3ab86e; color: #1a7a3a; }
+    .cli-num.pendiente { background: #fff8d0; border-color: #e8c83a; color: #7a6008; }
+    .cli-subtotal { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 5px; }
+    .cli-total { margin-top: 12px; padding: 10px; background: rgba(212,160,23,0.12); border: 1px solid rgba(212,160,23,0.4); border-radius: 8px; }
+    .cli-total-main { display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: #f5c842; }
+    .cli-total-det { display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px; }
+    #btn-buscar-volver { width: 100%; margin-top: 14px; background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: rgba(255,255,255,0.55); font-size: 13px; padding: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -172,6 +196,19 @@
     <input class="inp" id="inp-grupo" type="number" placeholder="Ej: 8" min="1" max="999" />
     <div id="login-error"></div>
     <button id="btn-login">Entrar a mi rifa</button>
+    <button id="btn-buscar-cliente">Buscar cliente</button>
+  </div>
+
+  <div id="screen-buscar">
+    <div class="login-title">Buscar cliente</div>
+    <div class="buscar-row">
+      <input class="inp" id="inp-buscar" placeholder="Nombre, telefono o numero" maxlength="40" />
+      <button id="btn-buscar-ir">Buscar</button>
+    </div>
+    <div id="buscar-hint">Busca en todas las tablas. Escribe el apodo, el telefono, o un numero de 2 cifras (ej: 07).</div>
+    <div id="buscar-estado"></div>
+    <div id="buscar-resultados"></div>
+    <button id="btn-buscar-volver">Volver</button>
   </div>
 
   <div id="screen-rifa">
@@ -734,6 +771,134 @@ function fallbackShare(canvas, btn) {
   }, 800);
 }
 
+/* ===== BUSCAR CLIENTE ===== */
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function normalizar(s) {
+  return String(s || '').toLowerCase().normalize('NFD')
+    .replace(/[̀-ͯ​-‏‪-‮⁦-⁩﻿]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function soloDigitos(s) {
+  return String(s || '').replace(/\D/g, '');
+}
+
+// key = vendedor_20k_g8
+function infoRifa(key) {
+  var m = key.match(/^(.*)_(\d+)k_g(\d+)$/);
+  if (!m) return { label: key, valor: 0 };
+  return { label: m[1] + ' - $' + m[2] + 'k - Grupo #' + m[3], valor: parseInt(m[2], 10) * 1000 };
+}
+
+function formatoPesos(n) {
+  return '$' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function abrirBuscar() {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-buscar').style.display = 'block';
+  setTimeout(function() { document.getElementById('inp-buscar').focus(); }, 100);
+}
+
+function cerrarBuscar() {
+  document.getElementById('screen-buscar').style.display = 'none';
+  document.getElementById('screen-login').style.display = 'block';
+}
+
+function buscarCliente() {
+  var q = document.getElementById('inp-buscar').value.trim();
+  var estado = document.getElementById('buscar-estado');
+  var res = document.getElementById('buscar-resultados');
+  res.innerHTML = '';
+  if (!q) { estado.textContent = 'Escribe un nombre, telefono o numero'; return; }
+  estado.textContent = 'Buscando...';
+
+  db.ref('rifas').once('value').then(function(snap) {
+    var rifas = snap.val() || {};
+    var qNorm = normalizar(q);
+    var qDig = soloDigitos(q);
+    var esNumeroRifa = /^\d{1,2}$/.test(q);
+
+    // Todas las ventas reales (sin fakes)
+    var ventas = [];
+    Object.keys(rifas).forEach(function(key) {
+      var numeros = (rifas[key] && rifas[key].numeros) || {};
+      Object.keys(numeros).forEach(function(n) {
+        var d = numeros[n];
+        if (n === 'null' || !d || d.tipo === 'fake' || !d.apodo) return;
+        ventas.push({ rifa: key, num: parseInt(n, 10), dato: d, cliente: normalizar(d.apodo) });
+      });
+    });
+
+    // Clientes que coinciden con la busqueda
+    var clientes = {};
+    ventas.forEach(function(v) {
+      var coincide = esNumeroRifa
+        ? v.num === parseInt(q, 10)
+        : (v.cliente.indexOf(qNorm) !== -1 || (qDig.length >= 3 && soloDigitos(v.dato.tel).indexOf(qDig) !== -1));
+      if (coincide) clientes[v.cliente] = true;
+    });
+
+    var nombres = Object.keys(clientes);
+    if (nombres.length === 0) {
+      estado.textContent = 'No se encontro ningun cliente con "' + q + '"';
+      return;
+    }
+    estado.textContent = nombres.length === 1 ? '1 cliente encontrado' : nombres.length + ' clientes encontrados';
+
+    var html = '';
+    nombres.sort().forEach(function(c) {
+      var propias = ventas.filter(function(v) { return v.cliente === c; });
+      var porRifa = {};
+      var tels = {};
+      var nombreMostrar = propias[0].dato.apodo;
+      propias.forEach(function(v) {
+        (porRifa[v.rifa] = porRifa[v.rifa] || []).push(v);
+        if (v.dato.tel) tels[v.dato.tel] = true;
+      });
+
+      var total = 0, pagado = 0, pendiente = 0, cantidad = 0;
+      var tablasHtml = '';
+      Object.keys(porRifa).sort().forEach(function(rk) {
+        var info = infoRifa(rk);
+        var lista = porRifa[rk].sort(function(a, b) { return a.num - b.num; });
+        var sub = 0;
+        var numsHtml = '';
+        lista.forEach(function(v) {
+          var esPagado = v.dato.pago === 'pagado';
+          numsHtml += '<span class="cli-num ' + (esPagado ? 'pagado' : 'pendiente') + '">' + String(v.num).padStart(2, '0') + '</span>';
+          sub += info.valor;
+          if (esPagado) pagado += info.valor; else pendiente += info.valor;
+          cantidad++;
+        });
+        total += sub;
+        tablasHtml += '<div class="cli-tabla"><div class="cli-tabla-nombre">' + escapeHtml(info.label) + '</div>' +
+          '<div class="cli-nums">' + numsHtml + '</div>' +
+          '<div class="cli-subtotal">' + lista.length + (lista.length === 1 ? ' numero' : ' numeros') + ' - ' + formatoPesos(sub) + '</div></div>';
+      });
+
+      var telsTxt = Object.keys(tels).join(' / ');
+      html += '<div class="cli-card">' +
+        '<div class="cli-nombre">' + escapeHtml(nombreMostrar) + '</div>' +
+        (telsTxt ? '<div class="cli-tel">' + escapeHtml(telsTxt) + '</div>' : '') +
+        tablasHtml +
+        '<div class="cli-total">' +
+        '<div class="cli-total-main"><span>Total (' + cantidad + (cantidad === 1 ? ' numero' : ' numeros') + ')</span><span>' + formatoPesos(total) + '</span></div>' +
+        '<div class="cli-total-det"><span style="color:#5DCAA5">Pagado</span><span style="color:#5DCAA5">' + formatoPesos(pagado) + '</span></div>' +
+        '<div class="cli-total-det"><span style="color:#e8c83a">Debe</span><span style="color:#e8c83a">' + formatoPesos(pendiente) + '</span></div>' +
+        '</div></div>';
+    });
+    res.innerHTML = html;
+  }).catch(function() {
+    estado.textContent = 'Error al buscar - revisa conexion';
+  });
+}
+
 window.addEventListener('load', function() {
   firebase.initializeApp({
     apiKey: "AIzaSyDKdXXfrJaWa9rup7EbOVU_eIYq__8gZa8",
@@ -747,6 +912,12 @@ window.addEventListener('load', function() {
   db = firebase.database();
 
   document.getElementById('btn-login').onclick = entrar;
+  document.getElementById('btn-buscar-cliente').onclick = abrirBuscar;
+  document.getElementById('btn-buscar-volver').onclick = cerrarBuscar;
+  document.getElementById('btn-buscar-ir').onclick = buscarCliente;
+  document.getElementById('inp-buscar').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') buscarCliente();
+  });
   document.getElementById('btn-salir').onclick = salir;
   document.getElementById('btn-cfg').onclick = toggleCfg;
   document.getElementById('cfg-apply').onclick = applyConfig;
