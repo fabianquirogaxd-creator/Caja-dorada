@@ -129,6 +129,13 @@
     #btn-cliente-nuevo { width: 100%; margin-top: 8px; padding: 10px; border-radius: 8px; border: 2px solid rgba(0,212,255,0.3); background: rgba(0,212,255,0.1); color: rgba(0,212,255,0.6); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
     #btn-cliente-nuevo.selected { background: rgba(0,212,255,0.25); border-color: #00d4ff; color: #00d4ff; }
 
+    /* PRECIO ESPECIAL */
+    #btn-precio-especial { width: 100%; margin-top: 8px; padding: 10px; border-radius: 8px; border: 2px solid rgba(204,136,255,0.3); background: rgba(204,136,255,0.1); color: rgba(204,136,255,0.6); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    #btn-precio-especial.selected { background: rgba(204,136,255,0.25); border-color: #cc88ff; color: #cc88ff; }
+    #modal #inp-precio { display: none; margin-top: 6px; border-color: #cc88ff; }
+    #modal #inp-precio.open { display: block; }
+    .cli-num small { font-size: 10px; font-weight: 600; margin-left: 4px; color: #7a3fb0; }
+
     #modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
     .m-btn { flex: 1; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 14px; border: none; font-weight: 600; }
     #btn-cancel { background: transparent; border: 1px solid #2a4a6a; color: #8ab4cc; }
@@ -353,6 +360,8 @@
       <button class="pago-btn" id="pago-no" onclick="selPago('pendiente')">Sin pagar</button>
     </div>
     <button id="btn-cliente-nuevo" onclick="toggleClienteNuevo()">Cliente nuevo</button>
+    <button id="btn-precio-especial" onclick="togglePrecioEspecial()">Precio especial</button>
+    <input type="text" id="inp-precio" inputmode="numeric" placeholder="Valor con descuento. Ej: 15000" maxlength="12" />
     <div id="modal-actions">
       <button class="m-btn" id="btn-cancel">Cancelar</button>
       <button class="m-btn" id="btn-desmarcar" style="display:none">Desmarcar</button>
@@ -435,7 +444,8 @@ var PREMIOS = {
   '50k': { mayor: "$2.500.000",  p1: "$250.000", p2: "$250.000", p3: "$250.000" }
 };
 
-var db, rifaRef, selectedNum, pagoEstado, esEdicion, clienteNuevo;
+var db, rifaRef, selectedNum, pagoEstado, esEdicion, clienteNuevo, precioEspecial;
+precioEspecial = false;
 pagoEstado = 'pendiente';
 esEdicion = false;
 clienteNuevo = false;
@@ -443,6 +453,19 @@ clienteNuevo = false;
 function toggleClienteNuevo() {
   clienteNuevo = !clienteNuevo;
   document.getElementById('btn-cliente-nuevo').classList.toggle('selected', clienteNuevo);
+}
+
+function setPrecioEspecial(activo, valor) {
+  precioEspecial = activo;
+  document.getElementById('btn-precio-especial').classList.toggle('selected', activo);
+  var inp = document.getElementById('inp-precio');
+  inp.classList.toggle('open', activo);
+  inp.value = activo && valor ? valor : '';
+}
+
+function togglePrecioEspecial() {
+  setPrecioEspecial(!precioEspecial);
+  if (precioEspecial) document.getElementById('inp-precio').focus();
 }
 
 function setSyncStatus(type, text) {
@@ -587,6 +610,7 @@ function openModal(num) {
       selPago(dato.pago || 'pendiente');
       clienteNuevo = !!dato.nuevo;
       document.getElementById('btn-cliente-nuevo').classList.toggle('selected', clienteNuevo);
+      setPrecioEspecial(typeof dato.precio === 'number', dato.precio);
     });
   } else {
     document.getElementById('inp-apodo').value = '';
@@ -594,6 +618,7 @@ function openModal(num) {
     selPago('pendiente');
     clienteNuevo = false;
     document.getElementById('btn-cliente-nuevo').classList.remove('selected');
+    setPrecioEspecial(false);
     setTimeout(function() { document.getElementById('inp-apodo').focus(); }, 150);
   }
 
@@ -637,11 +662,18 @@ function confirmSale() {
   var apodo = document.getElementById('inp-apodo').value.trim();
   var tel = document.getElementById('inp-tel').value.trim();
   if (!apodo) { document.getElementById('inp-apodo').focus(); return; }
+  var precio = null;
+  if (precioEspecial) {
+    precio = parseInt(document.getElementById('inp-precio').value.replace(/\D/g, ''), 10);
+    if (!(precio > 0)) { document.getElementById('inp-precio').focus(); return; }
+  }
   var numToSave = selectedNum;
   var cell = document.getElementById('cell-' + numToSave);
   cell.classList.add('loading');
   closeModal();
-  rifaRef.child('numeros/' + numToSave).set({ apodo: apodo, tel: tel, pago: pagoEstado, nuevo: clienteNuevo, ts: Date.now() })
+  var venta = { apodo: apodo, tel: tel, pago: pagoEstado, nuevo: clienteNuevo, ts: Date.now() };
+  if (precio) venta.precio = precio;
+  rifaRef.child('numeros/' + numToSave).set(venta)
     .catch(function() {
       cell.classList.remove('loading');
       setSyncStatus('err', 'Error al guardar - revisa conexion');
@@ -871,9 +903,12 @@ function buscarCliente() {
         var numsHtml = '';
         lista.forEach(function(v) {
           var esPagado = v.dato.pago === 'pagado';
-          numsHtml += '<span class="cli-num ' + (esPagado ? 'pagado' : 'pendiente') + '">' + String(v.num).padStart(2, '0') + '</span>';
-          sub += info.valor;
-          if (esPagado) pagado += info.valor; else pendiente += info.valor;
+          var especial = typeof v.dato.precio === 'number';
+          var precioNum = especial ? v.dato.precio : info.valor;
+          numsHtml += '<span class="cli-num ' + (esPagado ? 'pagado' : 'pendiente') + '">' + String(v.num).padStart(2, '0') +
+            (especial ? '<small>' + formatoPesos(precioNum) + '</small>' : '') + '</span>';
+          sub += precioNum;
+          if (esPagado) pagado += precioNum; else pendiente += precioNum;
           cantidad++;
         });
         total += sub;

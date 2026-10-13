@@ -48,6 +48,7 @@
     .badge-pagado { display: inline-block; background: rgba(58,184,110,0.15); color: #3ab86e; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     .badge-pendiente { display: inline-block; background: rgba(232,200,58,0.15); color: #c8a010; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     .badge-web { display: inline-block; background: rgba(0,212,255,0.15); color: #00d4ff; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .badge-especial { display: inline-block; background: rgba(204,136,255,0.15); color: #cc88ff; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
     .badge-manual { display: inline-block; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.35); border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     tr.row-contactar { background: rgba(0,212,255,0.06); box-shadow: inset 3px 0 0 #00d4ff; }
     .empty-state { text-align: center; padding: 2.5rem; color: rgba(255,255,255,0.3); font-size: 13px; }
@@ -333,7 +334,15 @@ function seleccionarVendedor(key) {
   renderTabHoy();
 }
 
-function buildTabla(numeros) {
+function formatoPesos(n) {
+  return '$' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function precioDe(dato, valorBase) {
+  return typeof dato.precio === 'number' ? dato.precio : valorBase;
+}
+
+function buildTabla(numeros, valorBase) {
   var filas = '';
   for (var i = 0; i < 100; i++) {
     var dato = numeros[i] || numeros[String(i)];
@@ -353,14 +362,15 @@ function buildTabla(numeros) {
       filas += '<td>' + (esFake ? '-' : escapeHtml(dato.apodo || '-')) + '</td>';
       filas += '<td>' + (esFake ? '-' : escapeHtml(dato.tel || '-')) + '</td>';
       filas += '<td>' + (!esFake && dato.nuevo && pagado ? '<span class="badge-web">Nuevo</span>' : '-') + '</td>';
+      filas += '<td>' + (esFake ? '-' : (typeof dato.precio === 'number' ? '<span class="badge-especial">' + formatoPesos(dato.precio) + '</span>' : formatoPesos(valorBase))) + '</td>';
       filas += '<td>' + tsToHora(dato.ts) + '</td></tr>';
     } else {
       filas += '<tr><td class="num-col">' + num + '</td>';
       filas += '<td><span class="badge-free">Libre</span></td>';
-      filas += '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
+      filas += '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
     }
   }
-  return '<div class="table-scroll"><table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Origen</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table></div>';
+  return '<div class="table-scroll"><table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Origen</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Precio</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table></div>';
 }
 
 function renderTabHoy() {
@@ -399,7 +409,7 @@ function renderTabHoy() {
     '<div><div class="rifa-name">' + escapeHtml(keyToLabel(key)) + '</div>' +
     '<div class="rifa-stats">' + statsTxt + '</div></div>' +
     '<button class="btn-reset-one" data-reset="' + escapeHtml(key) + '">Resetear</button>' +
-    '</div>' + buildTabla(numeros) + '</div>';
+    '</div>' + buildTabla(numeros, valorDesdeKey(key)) + '</div>';
 
   document.getElementById('vendor-tabs-inner').addEventListener('click', function(e) {
     var btn = e.target.closest('.vendor-tab');
@@ -444,7 +454,7 @@ function renderHistorial() {
       rifasHtml += '<div class="rifa-header"><div>';
       rifasHtml += '<div class="rifa-name">' + escapeHtml(keyToLabel(rk)) + '</div>';
       rifasHtml += '<div class="rifa-stats">' + vendidos2 + ' vendidos - ' + (100 - vendidos2) + ' disponibles</div>';
-      rifasHtml += '</div></div>' + buildTabla(numeros2) + '</div>';
+      rifasHtml += '</div></div>' + buildTabla(numeros2, valorDesdeKey(rk)) + '</div>';
     }
     div.innerHTML =
       '<div class="hist-day-header" data-dia="' + dia + '">' +
@@ -562,7 +572,7 @@ function exportarExcel(fuente) {
         var esFake = dato.tipo === 'fake';
         var pagado = dato.pago === 'pagado';
         var esWeb = dato.origen === 'web';
-        var valor = (!esFake && pagado) ? valorNum : 0;
+        var valor = (!esFake && pagado) ? precioDe(dato, valorNum) : 0;
         total += valor;
         rows.push([num, esFake ? 'Fake' : 'Vendido', esFake ? '-' : (pagado ? 'Pagado' : 'Sin pagar'), esFake ? '-' : (esWeb ? 'Web' : 'Manual'), esFake ? '-' : sanitizeCell(dato.apodo || ''), esFake ? '-' : sanitizeCell(dato.tel || ''), esFake ? '-' : (dato.nuevo && pagado ? 'Nuevo' : ''), tsToHora(dato.ts), valor]);
       } else {
