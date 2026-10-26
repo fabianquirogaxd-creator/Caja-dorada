@@ -72,12 +72,12 @@
     .stat-label { font-size: 11px; color: rgba(255,255,255,0.45); }
     .stat-val { font-size: 20px; font-weight: 600; color: #fff; }
 
-    #grid-wrap { background: #dde3ed; border-radius: 10px; padding: 4px; transition: background 0.5s; }
+    #grid-wrap { background: #e9d9b0; border-radius: 10px; padding: 4px; transition: background 0.5s; }
     #grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
     .num-cell {
       aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-      background: #fff; border: 1px solid #c0cad8;
-      font-size: 12px; font-weight: 600; color: #1a2a3a;
+      background: #fffaf0; border: 1px solid #e2cf9a;
+      font-size: 12px; font-weight: 600; color: #5a3a10;
       cursor: pointer; user-select: none; overflow: hidden;
       transition: background 0.1s, transform 0.1s;
     }
@@ -419,7 +419,9 @@
 // Cofre abierto con monedas de oro; el numero queda visible en la placa
 var COFRE_COLORES = {
   pagado:    { claro: '#2fc46f', oscuro: '#0d6b36', tapa: '#138a47', placa1: '#5ee49a', placa2: '#27b366', borde: '#0b5a2d' },
-  pendiente: { claro: '#f2b72a', oscuro: '#a36a00', tapa: '#c98a06', placa1: '#ffd966', placa2: '#e8a512', borde: '#7a4f00' }
+  pendiente: { claro: '#f2b72a', oscuro: '#a36a00', tapa: '#c98a06', placa1: '#ffd966', placa2: '#e8a512', borde: '#7a4f00' },
+  // Para la imagen que se comparte: todos iguales, no muestra quien pago
+  madera:    { claro: '#a8672e', oscuro: '#5a3212', tapa: '#7a4519', placa1: '#ffe27a', placa2: '#d9a21b', borde: '#6b4300' }
 };
 
 function cofreSvg(num, estado) {
@@ -825,7 +827,16 @@ function compartirWhatsApp() {
 
   // Grid clone from DOM
   var gridClone = document.getElementById('grid-wrap').cloneNode(true);
-  gridClone.style.cssText = 'background:#dde3ed;border-radius:8px;padding:4px;';
+  gridClone.style.cssText = 'background:#e9d9b0;border-radius:8px;padding:4px;';
+  // En la imagen todos los vendidos se ven iguales (cofre de madera), sin verde ni amarillo
+  var celdas = gridClone.querySelectorAll('.num-cell');
+  for (var c = 0; c < celdas.length; c++) {
+    var cl = celdas[c].classList;
+    if (cl.contains('sold-pagado') || cl.contains('sold-pendiente')) {
+      celdas[c].className = 'num-cell';
+      celdas[c].innerHTML = cofreSvg(c, 'madera');
+    }
+  }
 
   card.innerHTML = header + premioMayor + premiosMenores;
   card.appendChild(gridClone);

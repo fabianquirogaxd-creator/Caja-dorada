@@ -49,6 +49,29 @@
     .badge-pendiente { display: inline-block; background: rgba(232,200,58,0.15); color: #c8a010; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     .badge-web { display: inline-block; background: rgba(0,212,255,0.15); color: #00d4ff; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
     .badge-especial { display: inline-block; background: rgba(204,136,255,0.15); color: #cc88ff; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .resumen-titulo { font-size: 11px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .resumen { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem; }
+    .res-card { background: #0d1e35; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; }
+    .res-label { font-size: 11px; color: rgba(255,255,255,0.5); }
+    .res-val { font-size: 20px; font-weight: 700; color: #fff; margin-top: 2px; }
+    .res-verde { border-color: rgba(58,184,110,0.4); background: rgba(58,184,110,0.08); }
+    .res-verde .res-val { color: #3ab86e; }
+    .res-amarillo { border-color: rgba(232,200,58,0.4); background: rgba(232,200,58,0.08); }
+    .res-amarillo .res-val { color: #e8c83a; }
+    .res-azul { border-color: rgba(0,212,255,0.4); background: rgba(0,212,255,0.08); }
+    .res-azul .res-val { color: #00d4ff; }
+    @media (max-width: 560px) { .resumen { grid-template-columns: repeat(2, 1fr); } }
+    .rifa-dinero { display: flex; gap: 12px; margin-top: 4px; font-size: 12px; font-weight: 600; }
+    .txt-verde { color: #3ab86e; }
+    .txt-amarillo { color: #e8c83a; }
+    #config-wrap { margin-bottom: 1rem; }
+    #btn-config { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+    #btn-config.open { border-color: #00d4ff; color: #00d4ff; }
+    #config-panel { display: none; margin-top: 10px; background: #0d1e35; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; }
+    #config-panel.open { display: block; }
+    #config-panel #loteria-bar, #config-panel #color-bar { margin-bottom: 0.75rem !important; }
+    #config-panel #color-bar { margin-bottom: 0 !important; }
+    #config-panel #inp-loteria { min-width: 0; }
     .badge-manual { display: inline-block; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.35); border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     tr.row-contactar { background: rgba(0,212,255,0.06); box-shadow: inset 3px 0 0 #00d4ff; }
     .empty-state { text-align: center; padding: 2.5rem; color: rgba(255,255,255,0.3); font-size: 13px; }
@@ -112,6 +135,9 @@
   <button id="btn-signout">Cerrar sesion</button>
 </div>
 
+<div id="config-wrap">
+<button id="btn-config">⚙ Configuración</button>
+<div id="config-panel">
 <div id="loteria-bar">
   <label>Loteria del dia:</label>
   <input type="text" id="inp-loteria" placeholder="Ej: Loteria de Manizales" />
@@ -129,6 +155,8 @@
     <button class="color-preset" data-color="#001a1a" style="background:#001a1a;color:#fff;">Teal</button>
   </div>
   <button id="btn-color" style="padding:7px 14px;border-radius:8px;border:none;background:#00d4ff;color:#060e1a;font-size:13px;font-weight:600;cursor:pointer;">Aplicar</button>
+</div>
+</div>
 </div>
 
 <div id="main-tabs">
@@ -373,6 +401,31 @@ function buildTabla(numeros, valorBase) {
   return '<div class="table-scroll"><table><thead><tr><th>#</th><th>Estado</th><th>Pago</th><th>Origen</th><th>Apodo</th><th>Telefono</th><th>Nuevo</th><th>Precio</th><th>Hora</th></tr></thead><tbody>' + filas + '</tbody></table></div>';
 }
 
+// Suma dinero de una rifa (sin fakes). Usa el precio especial si existe.
+function resumenRifa(key, numeros) {
+  var base = valorDesdeKey(key);
+  var r = { recaudado: 0, porCobrar: 0, vendidos: 0, porContactar: 0 };
+  Object.keys(numeros || {}).forEach(function(n) {
+    var d = numeros[n];
+    if (n === 'null' || !d || d.tipo === 'fake') return;
+    r.vendidos++;
+    if (d.pago === 'pagado') r.recaudado += precioDe(d, base);
+    else r.porCobrar += precioDe(d, base);
+    if (d.origen === 'web' && d.pago !== 'pagado') r.porContactar++;
+  });
+  return r;
+}
+
+function resumenHtml(r, titulo) {
+  return '<div class="resumen-titulo">' + titulo + '</div>' +
+    '<div class="resumen">' +
+    '<div class="res-card res-verde"><div class="res-label">Recaudado</div><div class="res-val">' + formatoPesos(r.recaudado) + '</div></div>' +
+    '<div class="res-card res-amarillo"><div class="res-label">Por cobrar</div><div class="res-val">' + formatoPesos(r.porCobrar) + '</div></div>' +
+    '<div class="res-card"><div class="res-label">Números vendidos</div><div class="res-val">' + r.vendidos + '</div></div>' +
+    '<div class="res-card' + (r.porContactar ? ' res-azul' : '') + '"><div class="res-label">Web por contactar</div><div class="res-val">' + r.porContactar + '</div></div>' +
+    '</div>';
+}
+
 function renderTabHoy() {
   var content = document.getElementById('content');
   var keys = Object.keys(allData);
@@ -402,7 +455,17 @@ function renderTabHoy() {
   }
   var statsTxt = vendidos + ' vendidos - ' + (100 - vendidos) + ' disponibles';
   if (porContactar > 0) statsTxt += ' - <span style="color:#00d4ff;font-weight:600;">' + porContactar + ' por contactar (web)</span>';
+  var rTabla = resumenRifa(key, numeros);
+  statsTxt += '<div class="rifa-dinero"><span class="txt-verde">Recaudado ' + formatoPesos(rTabla.recaudado) + '</span>' +
+    '<span class="txt-amarillo">Por cobrar ' + formatoPesos(rTabla.porCobrar) + '</span></div>';
+  var rDia = { recaudado: 0, porCobrar: 0, vendidos: 0, porContactar: 0 };
+  keys.forEach(function(k2) {
+    var r = resumenRifa(k2, allData[k2] && allData[k2].numeros);
+    rDia.recaudado += r.recaudado; rDia.porCobrar += r.porCobrar;
+    rDia.vendidos += r.vendidos; rDia.porContactar += r.porContactar;
+  });
   content.innerHTML =
+    resumenHtml(rDia, 'Resumen del día · ' + keys.length + (keys.length === 1 ? ' tabla' : ' tablas')) +
     '<div class="vendor-tabs-wrap"><div class="vendor-tabs" id="vendor-tabs-inner">' + tabsHtml + '</div></div>' +
     '<div class="rifa-block">' +
     '<div class="rifa-header">' +
@@ -625,6 +688,10 @@ function initApp() {
   document.getElementById('btn-reset-all').onclick = function() { confirmarReset(null); };
   document.getElementById('btn-refresh').onclick = cargarDatos;
   document.getElementById('btn-loteria').onclick = guardarLoteria;
+  document.getElementById('btn-config').onclick = function() {
+    this.classList.toggle('open');
+    document.getElementById('config-panel').classList.toggle('open');
+  };
   document.getElementById('btn-color').onclick = function() {
     guardarColor(document.getElementById('inp-grid-color').value);
   };
