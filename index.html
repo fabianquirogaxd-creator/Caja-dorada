@@ -354,7 +354,7 @@
     <div id="leyenda">
       <div class="ley-item"><div class="ley-dot pagado"></div>Pagado</div>
       <div class="ley-item"><div class="ley-dot pendiente"></div>Sin pagar</div>
-      <div class="ley-item"><div class="ley-dot pagado"></div>Fake</div>
+      <div class="ley-item"><div class="ley-dot pendiente"></div>Fake</div>
     </div>
     <button id="btn-whatsapp" onclick="compartirWhatsApp()">Compartir por WhatsApp</button>
     <div id="sync-bar">
@@ -400,17 +400,6 @@
   </div>
 </div>
 
-<div id="fake-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;z-index:200;">
-  <div style="background:#0d1e35;border:1px solid #1e3a5a;border-radius:14px;padding:1.5rem;width:min(300px,90vw);text-align:center;">
-    <h2 style="font-size:15px;font-weight:600;color:#00d4ff;margin-bottom:6px;">Numero <span id="fake-num-label">00</span></h2>
-    <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:1.25rem;">Selecciona el color del fake</p>
-    <div style="display:flex;gap:10px;">
-      <button onclick="confirmarFake('pagado')" style="flex:1;padding:12px;border-radius:8px;border:2px solid #3ab86e;background:rgba(58,184,110,0.15);color:#3ab86e;font-size:14px;font-weight:700;cursor:pointer;">Verde</button>
-      <button onclick="confirmarFake('pendiente')" style="flex:1;padding:12px;border-radius:8px;border:2px solid #e8c83a;background:rgba(232,200,58,0.15);color:#c8a010;font-size:14px;font-weight:700;cursor:pointer;">Amarillo</button>
-    </div>
-    <button onclick="closeFakeModal()" style="margin-top:10px;width:100%;padding:9px;border-radius:8px;border:1px solid #2a4a6a;background:transparent;color:#8ab4cc;font-size:13px;cursor:pointer;">Cancelar</button>
-  </div>
-</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -696,27 +685,14 @@ function openModal(num) {
   document.getElementById('modal-bg').classList.add('open');
 }
 
-var fakeNumPending = null;
-
+// Los fakes siempre se ven amarillos (sin pagar) para el vendedor
 function marcarFake() {
-  fakeNumPending = selectedNum;
+  var numToSave = selectedNum;
   closeModal();
-  document.getElementById('fake-num-label').textContent = String(fakeNumPending).padStart(2,'0');
-  document.getElementById('fake-modal-bg').style.display = 'flex';
-}
-
-function closeFakeModal() {
-  document.getElementById('fake-modal-bg').style.display = 'none';
-  fakeNumPending = null;
-}
-
-function confirmarFake(color) {
-  var numToSave = fakeNumPending;
-  closeFakeModal();
   if (numToSave === null) return;
   var cell = document.getElementById('cell-' + numToSave);
   cell.classList.add('loading');
-  rifaRef.child('numeros/' + numToSave).set({ tipo: 'fake', pago: color, ts: Date.now() })
+  rifaRef.child('numeros/' + numToSave).set({ tipo: 'fake', pago: 'pendiente', ts: Date.now() })
     .catch(function() {
       cell.classList.remove('loading');
       setSyncStatus('err', 'Error al guardar - revisa conexion');
