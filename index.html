@@ -1014,6 +1014,41 @@ function buscarCliente() {
   });
 }
 
+/* ===== RESERVAS FUTURAS ===== */
+function fechaLocal(offsetDias) {
+  var d = new Date();
+  d.setDate(d.getDate() + (offsetDias || 0));
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// Las reservas futuras se pasan solas a la tabla del dia. Se espera a las 6am
+// para no mezclarlas con la tabla de la noche anterior antes de resetearla.
+var HORA_PASE_FUTURAS = 6;
+function pasarFuturasDeHoy() {
+  if (new Date().getHours() < HORA_PASE_FUTURAS) return Promise.resolve();
+  var hoy = fechaLocal(0);
+  return db.ref('futuras/' + hoy).once('value').then(function(snap) {
+    var tablas = snap.val() || {};
+    var tareas = [];
+    Object.keys(tablas).forEach(function(key) {
+      var numeros = (tablas[key] && tablas[key].numeros) || {};
+      Object.keys(numeros).forEach(function(n) {
+        var dato = numeros[n];
+        if (!dato) return;
+        var origen = db.ref('futuras/' + hoy + '/' + key + '/numeros/' + n);
+        tareas.push(db.ref('rifas/' + key + '/numeros/' + n).transaction(function(actual) {
+          if (actual !== null) return; // ocupado: queda en futuras para revisarlo en el panel
+          return dato;
+        }).then(function(res) {
+          var v = res.snapshot.val();
+          if (res.committed || (v && v.ts === dato.ts && v.tel === dato.tel)) return origen.remove();
+        }));
+      });
+    });
+    return Promise.all(tareas);
+  }).catch(function() {});
+}
+
 window.addEventListener('load', function() {
   firebase.initializeApp({
     apiKey: "AIzaSyDKdXXfrJaWa9rup7EbOVU_eIYq__8gZa8",
@@ -1025,6 +1060,7 @@ window.addEventListener('load', function() {
     appId: "1:218327954995:web:868569160171f2380c5546"
   });
   db = firebase.database();
+  pasarFuturasDeHoy();
 
   document.getElementById('btn-login').onclick = entrar;
   document.getElementById('valor-btns').addEventListener('click', function(e) {

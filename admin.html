@@ -72,6 +72,11 @@
     #config-panel #loteria-bar, #config-panel #color-bar { margin-bottom: 0.75rem !important; }
     #config-panel #color-bar { margin-bottom: 0 !important; }
     #config-panel #inp-loteria { min-width: 0; }
+    #main-tabs { flex-wrap: wrap; }
+    .fut-btn { padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(58,184,110,0.5); background: rgba(58,184,110,0.12); color: #3ab86e; font-size: 11px; cursor: pointer; }
+    .fut-btn.fut-quitar { border-color: rgba(240,149,149,0.5); background: rgba(139,26,26,0.2); color: #f09595; }
+    .fut-btn.fut-quitar.confirmar { background: #8b1a1a; color: #fff; border-color: #f09595; font-weight: 600; }
+    .fut-btn:disabled { opacity: 0.6; cursor: wait; }
     .badge-manual { display: inline-block; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.35); border-radius: 4px; padding: 2px 8px; font-size: 11px; }
     tr.row-contactar { background: rgba(0,212,255,0.06); box-shadow: inset 3px 0 0 #00d4ff; }
     .empty-state { text-align: center; padding: 2.5rem; color: rgba(255,255,255,0.3); font-size: 13px; }
@@ -162,6 +167,7 @@
 <div id="main-tabs">
   <button class="main-tab active" id="tab-hoy">Hoy</button>
   <button class="main-tab" id="tab-web">Compras Web</button>
+  <button class="main-tab" id="tab-futuras">Reservas futuras</button>
   <button class="main-tab" id="tab-hist">Historial (7 dias)</button>
 </div>
 
@@ -293,16 +299,112 @@ function cargarDatos() {
     historialData = snap.val() || {};
     if (tabActual === 'historial') renderHistorial();
   });
+  db.ref('futuras').once('value').then(function(snap) {
+    futurasData = snap.val() || {};
+    if (tabActual === 'futuras') renderFuturas();
+  });
 }
+
+var futurasData = {};
 
 function showTab(tab) {
   tabActual = tab;
   document.getElementById('tab-hoy').classList.toggle('active', tab === 'hoy');
   document.getElementById('tab-web').classList.toggle('active', tab === 'web');
+  document.getElementById('tab-futuras').classList.toggle('active', tab === 'futuras');
   document.getElementById('tab-hist').classList.toggle('active', tab === 'historial');
   if (tab === 'hoy') renderTabHoy();
   else if (tab === 'web') renderComprasWeb();
+  else if (tab === 'futuras') renderFuturas();
   else renderHistorial();
+}
+
+function renderFuturas() {
+  var content = document.getElementById('content');
+  var hoy = fechaLocal(0);
+  var dias = Object.keys(futurasData).sort();
+  var html = '';
+  var total = 0;
+  dias.forEach(function(dia) {
+    var tablas = futurasData[dia] || {};
+    var filas = [];
+    Object.keys(tablas).forEach(function(key) {
+      var numeros = (tablas[key] && tablas[key].numeros) || {};
+      Object.keys(numeros).forEach(function(n) {
+        if (n === 'null' || !numeros[n]) return;
+        filas.push({ key: key, num: n, dato: numeros[n] });
+      });
+    });
+    if (filas.length === 0) return;
+    total += filas.length;
+    filas.sort(function(a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : a.num - b.num; });
+    var vencido = dia <= hoy;
+    var filasHtml = '';
+    filas.forEach(function(f) {
+      var pagado = f.dato.pago === 'pagado';
+      var ruta = dia + '/' + f.key + '/numeros/' + f.num;
+      filasHtml += '<tr' + (!pagado ? ' class="row-contactar"' : '') + '>' +
+        '<td class="num-col">' + String(f.num).padStart(2, '0') + '</td>' +
+        '<td>' + escapeHtml(keyToLabel(f.key)) + '</td>' +
+        '<td>' + (pagado ? '<span class="badge-pagado">Pagado</span>' : '<span class="badge-pendiente">Sin pagar</span>') + '</td>' +
+        '<td>' + escapeHtml(f.dato.apodo || '-') + '</td>' +
+        '<td>' + escapeHtml(f.dato.tel || '-') + '</td>' +
+        '<td>' + tsToHora(f.dato.ts) + '</td>' +
+        '<td style="white-space:nowrap">' +
+          '<button class="fut-btn" data-accion="pago" data-ruta="' + escapeHtml(ruta) + '" data-pago="' + (pagado ? 'pendiente' : 'pagado') + '">' + (pagado ? 'Quitar pago' : 'Marcar pagado') + '</button> ' +
+          '<button class="fut-btn fut-quitar" data-accion="quitar" data-ruta="' + escapeHtml(ruta) + '">Quitar</button>' +
+        '</td></tr>';
+    });
+    var porCobrar = filas.filter(function(f) { return f.dato.pago !== 'pagado'; }).length;
+    html += '<div class="rifa-block"><div class="rifa-header"><div>' +
+      '<div class="rifa-name">' + fechaLabel(dia).replace(/^./, function(c) { return c.toUpperCase(); }) + (dia === hoy ? ' (hoy)' : '') + '</div>' +
+      '<div class="rifa-stats">' + filas.length + ' reservados - ' + porCobrar + ' sin pagar' +
+      (vencido ? ' - <span style="color:#f09595;font-weight:600;">No se pudieron pasar a la tabla: el numero ya estaba ocupado</span>' : '') +
+      '</div></div></div>' +
+      '<div class="table-scroll"><table><thead><tr><th>#</th><th>Rifa</th><th>Pago</th><th>Apodo</th><th>Telefono</th><th>Reservo</th><th></th></tr></thead><tbody>' + filasHtml + '</tbody></table></div></div>';
+  });
+  if (total === 0) {
+    content.innerHTML = '<div class="empty-state">No hay reservas para dias futuros.</div>';
+    return;
+  }
+  content.innerHTML = '<div class="resumen-titulo">' + total + ' numeros separados para los proximos dias. El dia de la dinamica pasan solos a la tabla.</div>' +
+    '<div id="futuras-error" style="display:none;margin-bottom:10px;padding:10px 12px;border-radius:8px;background:rgba(139,26,26,0.3);border:1px solid #f09595;color:#f09595;font-size:12px;"></div>' + html;
+  content.querySelectorAll('.fut-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var boton = this;
+      var ruta = 'futuras/' + boton.getAttribute('data-ruta');
+      var accion = boton.getAttribute('data-accion');
+      var p;
+      if (accion === 'quitar') {
+        // Confirmacion dentro de la pagina: algunos navegadores bloquean confirm()
+        if (!boton.classList.contains('confirmar')) {
+          boton.classList.add('confirmar');
+          boton.textContent = '¿Seguro? Toca otra vez';
+          setTimeout(function() {
+            if (document.body.contains(boton)) { boton.classList.remove('confirmar'); boton.textContent = 'Quitar'; }
+          }, 4000);
+          return;
+        }
+        p = db.ref(ruta).remove();
+      } else {
+        p = db.ref(ruta + '/pago').set(boton.getAttribute('data-pago'));
+      }
+      boton.disabled = true;
+      boton.textContent = 'Guardando...';
+      p.then(function() {
+        return db.ref('futuras').once('value');
+      }).then(function(snap) {
+        futurasData = snap.val() || {};
+        renderFuturas();
+      }).catch(function(e) {
+        boton.disabled = false;
+        boton.textContent = 'Reintentar';
+        var aviso = document.getElementById('futuras-error');
+        aviso.textContent = 'No se pudo guardar el cambio (' + ((e && e.code) || 'error') + '). Revisa la conexion o vuelve a iniciar sesion.';
+        aviso.style.display = 'block';
+      });
+    });
+  });
 }
 
 function renderComprasWeb() {
@@ -679,11 +781,12 @@ function initApp() {
     if (snap.val()) document.getElementById('inp-loteria').value = snap.val();
   });
 
-  cargarDatos();
+  pasarFuturasDeHoy().then(cargarDatos);
 
   document.getElementById('tab-hoy').onclick = function() { showTab('hoy'); };
   document.getElementById('tab-web').onclick = function() { showTab('web'); };
   document.getElementById('tab-hist').onclick = function() { showTab('historial'); };
+  document.getElementById('tab-futuras').onclick = function() { showTab('futuras'); };
   document.getElementById('btn-export').onclick = abrirExportModal;
   document.getElementById('btn-reset-all').onclick = function() { confirmarReset(null); };
   document.getElementById('btn-refresh').onclick = cargarDatos;
@@ -723,6 +826,41 @@ function initApp() {
   document.getElementById('export-modal-bg').addEventListener('click', function(e) {
     if (e.target === this) cerrarExportModal();
   });
+}
+
+/* ===== RESERVAS FUTURAS ===== */
+function fechaLocal(offsetDias) {
+  var d = new Date();
+  d.setDate(d.getDate() + (offsetDias || 0));
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// Las reservas futuras se pasan solas a la tabla del dia. Se espera a las 6am
+// para no mezclarlas con la tabla de la noche anterior antes de resetearla.
+var HORA_PASE_FUTURAS = 6;
+function pasarFuturasDeHoy() {
+  if (new Date().getHours() < HORA_PASE_FUTURAS) return Promise.resolve();
+  var hoy = fechaLocal(0);
+  return db.ref('futuras/' + hoy).once('value').then(function(snap) {
+    var tablas = snap.val() || {};
+    var tareas = [];
+    Object.keys(tablas).forEach(function(key) {
+      var numeros = (tablas[key] && tablas[key].numeros) || {};
+      Object.keys(numeros).forEach(function(n) {
+        var dato = numeros[n];
+        if (!dato) return;
+        var origen = db.ref('futuras/' + hoy + '/' + key + '/numeros/' + n);
+        tareas.push(db.ref('rifas/' + key + '/numeros/' + n).transaction(function(actual) {
+          if (actual !== null) return; // ocupado: queda en futuras para revisarlo en el panel
+          return dato;
+        }).then(function(res) {
+          var v = res.snapshot.val();
+          if (res.committed || (v && v.ts === dato.ts && v.tel === dato.tel)) return origen.remove();
+        }));
+      });
+    });
+    return Promise.all(tareas);
+  }).catch(function() {});
 }
 
 window.addEventListener('load', function() {

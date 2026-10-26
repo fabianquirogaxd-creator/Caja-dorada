@@ -24,6 +24,15 @@
   #loteria-nombre { font-size: 15px; font-weight: 700; color: var(--acento); line-height: 1.2; }
   #loteria-sub { font-size: 9px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
 
+  .sec-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  #fechas { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  #fechas::-webkit-scrollbar { display: none; }
+  .fecha-btn { flex: 0 0 auto; min-width: 54px; padding: 7px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; line-height: 1.15; transition: all 0.15s; }
+  .fecha-btn small { display: block; font-size: 15px; font-weight: 800; }
+  .fecha-btn.active { background: #f5c842; border-color: #f5c842; color: #1a1000; }
+  #aviso-fecha { display: none; margin-bottom: 10px; padding: 9px 12px; border-radius: 10px; background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.35); color: #cdf3ff; font-size: 12px; text-align: center; line-height: 1.4; }
+  #aviso-fecha.open { display: block; }
+  #aviso-fecha b { color: #fff; }
   #tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
   .tab-btn { padding: 12px 2px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.15s; }
   .tab-btn.active { background: rgba(245,200,66,0.14); border-color: #f5c842; color: #f5c842; }
@@ -150,6 +159,10 @@
 
   <button id="btn-consultar">Consultar mis boletos</button>
 
+  <div class="sec-label">¿Para qué día quieres jugar?</div>
+  <div id="fechas"></div>
+
+  <div class="sec-label">Valor del número</div>
   <div id="tabs">
     <button class="tab-btn" data-valor="5k">$5.000</button>
     <button class="tab-btn active" data-valor="10k">$10.000</button>
@@ -158,6 +171,7 @@
   </div>
 
   <div id="card">
+    <div id="aviso-fecha"></div>
     <div class="premio-mayor-box">
       <div class="premio-mayor-label">Premio Mayor</div>
       <div class="premio-mayor-val" id="disp-mayor">$500.000</div>
@@ -311,13 +325,81 @@ var PREMIOS = {
 var VALORES = ['5k', '10k', '20k', '50k'];
 
 var db;
-var refs = {};       // valor -> firebase ref
-var dataCache = {};  // valor -> numeros object
+var refs = {};          // valor -> ref de la tabla de hoy
+var dataCache = {};     // valor -> numeros de hoy
 var valorActual = '10k';
+var fechaActual = 'hoy'; // 'hoy' o 'YYYY-MM-DD' para una dinamica futura
+var refFutura = null;   // tabla futura que se esta mirando
+var datosFutura = {};
 var selectedNum = null;
+var DIAS_ADELANTE = 7;
 
 function claveTier(valor) {
   return VENDEDOR + '_' + valor + '_g' + GRUPO;
+}
+
+/* ===== FECHAS ===== */
+function fechaLocal(offsetDias) {
+  var d = new Date();
+  d.setDate(d.getDate() + (offsetDias || 0));
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function fechaDesdeIso(iso) {
+  return new Date(iso + 'T12:00:00');
+}
+
+function fechaLarga(iso) {
+  return fechaDesdeIso(iso).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', '');
+}
+
+function diaCorto(iso) {
+  var t = fechaDesdeIso(iso).toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '');
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function textoFecha(fecha) {
+  return fecha === 'hoy' ? 'la dinamica de hoy' : 'la dinamica del ' + fechaLarga(fecha);
+}
+
+function buildFechas() {
+  var html = '';
+  for (var i = 0; i <= DIAS_ADELANTE; i++) {
+    var iso = fechaLocal(i);
+    var valor = i === 0 ? 'hoy' : iso;
+    var titulo = i === 0 ? 'Hoy' : (i === 1 ? 'Mañana' : diaCorto(iso));
+    html += '<button class="fecha-btn' + (valor === fechaActual ? ' active' : '') + '" data-fecha="' + valor + '">' +
+      titulo + '<small>' + fechaDesdeIso(iso).getDate() + '</small></button>';
+  }
+  document.getElementById('fechas').innerHTML = html;
+}
+
+// Las reservas futuras se pasan solas a la tabla del dia. Se espera a las 6am
+// para no mezclarlas con la tabla de la noche anterior antes de resetearla.
+var HORA_PASE_FUTURAS = 6;
+function pasarFuturasDeHoy() {
+  if (new Date().getHours() < HORA_PASE_FUTURAS) return Promise.resolve();
+  var hoy = fechaLocal(0);
+  return db.ref('futuras/' + hoy).once('value').then(function(snap) {
+    var tablas = snap.val() || {};
+    var tareas = [];
+    Object.keys(tablas).forEach(function(key) {
+      var numeros = (tablas[key] && tablas[key].numeros) || {};
+      Object.keys(numeros).forEach(function(n) {
+        var dato = numeros[n];
+        if (!dato) return;
+        var origen = db.ref('futuras/' + hoy + '/' + key + '/numeros/' + n);
+        tareas.push(db.ref('rifas/' + key + '/numeros/' + n).transaction(function(actual) {
+          if (actual !== null) return; // ocupado: queda en futuras para revisarlo en el panel
+          return dato;
+        }).then(function(res) {
+          var v = res.snapshot.val();
+          if (res.committed || (v && v.ts === dato.ts && v.tel === dato.tel)) return origen.remove();
+        }));
+      });
+    });
+    return Promise.all(tareas);
+  }).catch(function() {});
 }
 
 function setSyncStatus(type, text) {
@@ -340,6 +422,25 @@ function buildGrid() {
   }
 }
 
+function numerosActuales() {
+  return fechaActual === 'hoy' ? (dataCache[valorActual] || {}) : datosFutura;
+}
+
+function refActual(valor) {
+  return fechaActual === 'hoy' ? refs[valor] : db.ref('futuras/' + fechaActual + '/' + claveTier(valor));
+}
+
+function escucharFutura() {
+  if (refFutura) { refFutura.off(); refFutura = null; }
+  datosFutura = {};
+  if (fechaActual === 'hoy') return;
+  refFutura = refActual(valorActual);
+  refFutura.on('value', function(snap) {
+    datosFutura = (snap.val() || {}).numeros || {};
+    syncGrid(datosFutura);
+  });
+}
+
 function renderTier() {
   var p = PREMIOS[valorActual];
   document.getElementById('disp-mayor').textContent = p.mayor;
@@ -347,7 +448,14 @@ function renderTier() {
   document.getElementById('disp-p2').textContent = p.p2;
   document.getElementById('disp-p3').textContent = p.p3;
   document.getElementById('disp-valor').textContent = '$' + valorActual;
-  syncGrid(dataCache[valorActual] || {});
+  var aviso = document.getElementById('aviso-fecha');
+  if (fechaActual === 'hoy') {
+    aviso.classList.remove('open');
+  } else {
+    aviso.innerHTML = 'Estás separando para la dinámica del <b>' + fechaLarga(fechaActual) + '</b>. Ese día tu número queda en la tabla automáticamente.';
+    aviso.classList.add('open');
+  }
+  syncGrid(numerosActuales());
 }
 
 function syncGrid(numeros) {
@@ -374,7 +482,8 @@ function onCellClick(num) {
   if (!cell || cell.classList.contains('taken') || cell.classList.contains('loading')) return;
   selectedNum = num;
   document.getElementById('modal-title').textContent = 'Número ' + String(num).padStart(2, '0');
-  document.getElementById('modal-sub').textContent = 'Rifa de $' + valorActual.replace('k', '.000');
+  document.getElementById('modal-sub').textContent = 'Rifa de $' + valorActual.replace('k', '.000') + ' - ' +
+    (fechaActual === 'hoy' ? 'Hoy' : fechaLarga(fechaActual));
   document.getElementById('inp-apodo').value = '';
   document.getElementById('inp-tel').value = '';
   document.getElementById('modal-error').textContent = '';
@@ -397,7 +506,8 @@ function reservar() {
 
   var num = selectedNum;
   var valor = valorActual;
-  var ref = refs[valor];
+  var fecha = fechaActual;
+  var ref = refActual(valor);
   var btn = document.getElementById('btn-reservar');
   var cell = document.getElementById('cell-' + num);
   btn.disabled = true;
@@ -405,7 +515,9 @@ function reservar() {
 
   ref.child('numeros/' + num).transaction(function(current) {
     if (current !== null) return; // ya esta tomado, abortar
-    return { apodo: apodo, tel: tel, pago: 'pendiente', ts: Date.now(), origen: 'web' };
+    var dato = { apodo: apodo, tel: tel, pago: 'pendiente', ts: Date.now(), origen: 'web' };
+    if (fecha !== 'hoy') dato.reservaPara = fecha;
+    return dato;
   }, function(error, committed) {
     btn.disabled = false;
     cell.classList.remove('loading');
@@ -418,17 +530,18 @@ function reservar() {
       return;
     }
     closeModal();
-    mostrarConfirmacion(num, valor, apodo);
+    mostrarConfirmacion(num, valor, apodo, fecha);
   });
 }
 
-function mostrarConfirmacion(num, valor, apodo) {
+function mostrarConfirmacion(num, valor, apodo, fecha) {
   var numStr = String(num).padStart(2, '0');
   var precioTxt = '$' + valor.replace('k', '.000');
   document.getElementById('ok-msg').textContent =
-    'Reservaste el numero ' + numStr + ' de la rifa de ' + precioTxt + '. Ahora escribenos por WhatsApp para confirmar tu pago y quedar participando.';
+    'Reservaste el numero ' + numStr + ' de la rifa de ' + precioTxt + ' para ' + textoFecha(fecha) +
+    '. Ahora escribenos por WhatsApp para confirmar tu pago y quedar participando.';
   var texto = encodeURIComponent(
-    'Hola! Soy ' + apodo + '. Ya reserve mi numero ' + numStr + ' de la rifa de ' + precioTxt + ' en Caja Dorada 🍀'
+    'Hola! Soy ' + apodo + '. Ya reserve mi numero ' + numStr + ' de la rifa de ' + precioTxt + ' para ' + textoFecha(fecha) + ' en Caja Dorada 🍀'
   );
   document.getElementById('ok-btn-wpp').href = 'https://wa.me/' + WHATSAPP_NUM + '?text=' + texto;
   document.getElementById('ok-modal-bg').classList.add('open');
@@ -463,32 +576,46 @@ function buscarBoletos() {
   // compara por los ultimos 10 digitos para ignorar formatos con +57, espacios, etc.
   var sufijo = telBuscado.slice(-10);
   var encontrados = [];
-  VALORES.forEach(function(valor) {
-    var numeros = dataCache[valor] || {};
-    Object.keys(numeros).forEach(function(k) {
+  function revisar(numeros, valor, fecha) {
+    Object.keys(numeros || {}).forEach(function(k) {
       if (k === 'null') return;
       var dato = numeros[k];
       if (!dato || dato.tipo === 'fake') return;
       var telGuardado = soloDigitos(dato.tel).slice(-10);
       if (telGuardado && telGuardado === sufijo) {
-        encontrados.push({ num: k, valor: valor, pago: dato.pago });
+        encontrados.push({ num: k, valor: valor, pago: dato.pago, fecha: fecha });
       }
     });
-  });
-  if (encontrados.length === 0) {
-    resultados.innerHTML = '<div id="consulta-vacio">No encontramos boletos con ese telefono.</div>';
-    return;
   }
-  var html = '';
-  encontrados.forEach(function(r) {
-    var pagado = r.pago === 'pagado';
-    html += '<div class="res-item">' +
-      '<div><div class="res-num">' + String(r.num).padStart(2, '0') + '</div>' +
-      '<div class="res-tier">Rifa de $' + r.valor.replace('k', '.000') + '</div></div>' +
-      '<div class="res-estado ' + (pagado ? 'pagado' : 'pendiente') + '">' + (pagado ? 'Pagado' : 'Sin pagar') + '</div>' +
-      '</div>';
+  VALORES.forEach(function(valor) { revisar(dataCache[valor], valor, 'hoy'); });
+  resultados.innerHTML = '<div id="consulta-vacio">Buscando...</div>';
+
+  db.ref('futuras').once('value').then(function(snap) {
+    var futuras = snap.val() || {};
+    var hoy = fechaLocal(0);
+    Object.keys(futuras).sort().forEach(function(fecha) {
+      if (fecha < hoy) return;
+      VALORES.forEach(function(valor) {
+        var t = futuras[fecha][claveTier(valor)];
+        if (t) revisar(t.numeros, valor, fecha);
+      });
+    });
+  }).catch(function() {}).then(function() {
+    if (encontrados.length === 0) {
+      resultados.innerHTML = '<div id="consulta-vacio">No encontramos boletos con ese telefono.</div>';
+      return;
+    }
+    var html = '';
+    encontrados.forEach(function(r) {
+      var pagado = r.pago === 'pagado';
+      html += '<div class="res-item">' +
+        '<div><div class="res-num">' + String(r.num).padStart(2, '0') + '</div>' +
+        '<div class="res-tier">Rifa de $' + r.valor.replace('k', '.000') + ' - ' + (r.fecha === 'hoy' ? 'Hoy' : fechaLarga(r.fecha)) + '</div></div>' +
+        '<div class="res-estado ' + (pagado ? 'pagado' : 'pendiente') + '">' + (pagado ? 'Pagado' : 'Sin pagar') + '</div>' +
+        '</div>';
+    });
+    resultados.innerHTML = html;
   });
-  resultados.innerHTML = html;
 }
 
 function cambiarTab(valor) {
@@ -498,6 +625,18 @@ function cambiarTab(valor) {
     tabs[i].classList.toggle('active', tabs[i].getAttribute('data-valor') === valor);
   }
   buildGrid();
+  escucharFutura();
+  renderTier();
+}
+
+function cambiarFecha(fecha) {
+  fechaActual = fecha;
+  var btns = document.querySelectorAll('.fecha-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].getAttribute('data-fecha') === fecha);
+  }
+  buildGrid();
+  escucharFutura();
   renderTier();
 }
 
@@ -537,12 +676,19 @@ window.addEventListener('load', function() {
     refs[valor] = ref;
     ref.on('value', function(snap) {
       dataCache[valor] = (snap.val() || {}).numeros || {};
-      if (valor === valorActual) syncGrid(dataCache[valor]);
+      if (valor === valorActual && fechaActual === 'hoy') syncGrid(dataCache[valor]);
     });
   });
 
+  pasarFuturasDeHoy();
+  buildFechas();
   buildGrid();
   renderTier();
+
+  document.getElementById('fechas').addEventListener('click', function(e) {
+    var btn = e.target.closest('.fecha-btn');
+    if (btn) cambiarFecha(btn.getAttribute('data-fecha'));
+  });
 
   var tabs = document.querySelectorAll('.tab-btn');
   for (var i = 0; i < tabs.length; i++) {
