@@ -14,51 +14,54 @@
   }
   #app { width: 100%; max-width: 480px; }
 
-  #top-logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  #logo-texto { font-size: 16px; font-weight: 700; color: #f5c842; letter-spacing: 2px; font-family: Georgia, serif; }
+  :root { --acento: #00d4ff; }
+  #top-logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; }
+  #logo-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  #logo-left svg { width: 38px; height: 38px; filter: drop-shadow(0 3px 8px rgba(245,200,66,0.3)); }
+  #logo-texto { font-size: 18px; font-weight: 700; letter-spacing: 2px; font-family: Georgia, serif; line-height: 1.1; color: #f5c842; background: linear-gradient(180deg, #fff3b0 0%, #f5c842 50%, #b8860b 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
   #logo-sub { font-size: 9px; color: rgba(245,200,66,0.6); letter-spacing: 2px; text-transform: uppercase; }
-  #logo-right { text-align: right; max-width: 55%; }
-  #loteria-nombre { font-size: 15px; font-weight: 700; color: #00d4ff; line-height: 1.2; }
+  #logo-right { text-align: right; max-width: 50%; }
+  #loteria-nombre { font-size: 15px; font-weight: 700; color: var(--acento); line-height: 1.2; }
   #loteria-sub { font-size: 9px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
 
-  #tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-  .tab-btn { flex: 1; padding: 12px 4px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.55); font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; }
-  .tab-btn.active { background: rgba(0,212,255,0.12); border-color: #00d4ff; color: #00d4ff; }
+  #tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+  .tab-btn { padding: 12px 2px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .tab-btn.active { background: rgba(245,200,66,0.14); border-color: #f5c842; color: #f5c842; }
 
-  #card { background: #0d1e35; border-radius: 14px; padding: 1rem; border: 1px solid rgba(255,255,255,0.08); }
+  #card { background: #0d1e35; border-radius: 16px; padding: 1rem; border: 1px solid rgba(245,200,66,0.15); box-shadow: 0 10px 40px rgba(0,0,0,0.35); }
 
-  .premio-mayor-box { text-align: center; margin-bottom: 10px; padding: 12px; background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); }
-  .premio-mayor-label { font-size: 10px; color: rgba(255,255,255,0.45); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-  .premio-mayor-val { font-size: 32px; font-weight: 900; color: #00d4ff; line-height: 1; }
+  .premio-mayor-box { text-align: center; margin-bottom: 10px; padding: 14px 10px; border-radius: 12px; background: radial-gradient(circle at 50% 0%, rgba(245,200,66,0.18) 0%, rgba(245,200,66,0.04) 70%); border: 1px solid rgba(245,200,66,0.35); }
+  .premio-mayor-label { font-size: 10px; color: rgba(255,255,255,0.55); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .premio-mayor-val { font-size: 36px; font-weight: 900; color: var(--acento); line-height: 1; text-shadow: 0 0 18px rgba(255,255,255,0.15); }
 
   .premios-row { display: flex; gap: 6px; margin-bottom: 12px; }
-  .pm { flex: 1; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 2px; }
-  .pm-label { font-size: 9px; color: rgba(255,255,255,0.45); }
-  .pm-val { font-size: 12px; font-weight: 700; color: #00d4ff; }
+  .pm { flex: 1; text-align: center; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 7px 2px; }
+  .pm-label { font-size: 10px; color: rgba(255,255,255,0.5); }
+  .pm-val { font-size: 13px; font-weight: 700; color: var(--acento); }
 
   #stats { display: flex; gap: 6px; margin-bottom: 10px; }
   .stat-card { flex: 1; background: rgba(255,255,255,0.06); border-radius: 8px; padding: 7px 8px; border: 1px solid rgba(255,255,255,0.08); text-align: center; }
-  .stat-label { font-size: 9px; color: rgba(255,255,255,0.45); }
-  .stat-val { font-size: 17px; font-weight: 700; color: #fff; }
+  .stat-label { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .stat-val { font-size: 18px; font-weight: 700; color: #fff; }
 
-  #grid-wrap { background: #dde3ed; border-radius: 10px; padding: 4px; }
+  #grid-wrap { background: #e9d9b0; border-radius: 10px; padding: 4px; }
   #grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
   .num-cell {
     aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-    background: #fff; border: 1px solid #c0cad8;
-    font-size: 12px; font-weight: 700; color: #1a2a3a;
+    background: #fffaf0; border: 1px solid #e2cf9a;
+    font-size: 12px; font-weight: 700; color: #5a3a10;
     cursor: pointer; user-select: none; overflow: hidden;
     transition: background 0.1s, transform 0.1s;
   }
-  .num-cell:active:not(.taken):not(.loading) { transform: scale(0.9); background: #dff0ff; }
-  .num-cell.taken { background: #e8f8ee; border-color: #3ab86e; cursor: not-allowed; }
+  .num-cell:active:not(.taken):not(.loading) { transform: scale(0.9); background: #ffe9a8; }
+  .num-cell.taken { cursor: not-allowed; }
   .num-cell.loading { opacity: 0.4; cursor: wait; }
 
   #leyenda { display: flex; gap: 14px; margin-top: 8px; padding: 6px 10px; justify-content: center; }
-  .ley-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: rgba(255,255,255,0.45); }
+  .ley-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,0.5); }
   .ley-dot { width: 10px; height: 10px; border-radius: 2px; }
-  .ley-dot.libre { background: #fff; border: 1px solid #c0cad8; }
-  .ley-dot.tomado { background: #3ab86e; }
+  .ley-dot.libre { background: #fffaf0; border: 1px solid #e2cf9a; }
+  .ley-dot.tomado { background: #8b5426; border: 1px solid #f5c842; }
 
   #sync-bar { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 10px; background: rgba(255,255,255,0.05); border-radius: 8px; }
   #sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #888; flex-shrink: 0; transition: background 0.3s; }
@@ -95,8 +98,8 @@
   /* MODAL RESERVA */
   #modal-bg, #ok-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
   #modal-bg.open, #ok-modal-bg.open { display: flex; }
-  #modal, #ok-modal { background: #0d1e35; border: 1px solid #1e3a5a; border-radius: 14px; padding: 1.5rem; width: min(340px, 92vw); }
-  #modal h2 { font-size: 17px; font-weight: 700; color: #00d4ff; margin-bottom: 4px; }
+  #modal, #ok-modal { background: #0d1e35; border: 1px solid rgba(245,200,66,0.3); border-radius: 14px; padding: 1.5rem; width: min(340px, 92vw); }
+  #modal h2 { font-size: 18px; font-weight: 700; color: #f5c842; margin-bottom: 4px; }
   #modal .modal-sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 14px; }
   #modal label { font-size: 12px; color: #8ab4cc; display: block; margin-bottom: 5px; margin-top: 12px; }
   #modal input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid #2a4a6a; border-radius: 8px; color: #fff; padding: 11px 12px; font-size: 15px; outline: none; }
@@ -105,7 +108,7 @@
   #modal-actions { display: flex; gap: 8px; margin-top: 1.25rem; }
   .m-btn { flex: 1; border-radius: 8px; padding: 11px; cursor: pointer; font-size: 14px; border: none; font-weight: 700; }
   #btn-cancel { background: transparent; border: 1px solid #2a4a6a; color: #8ab4cc; }
-  #btn-reservar { background: #d4a017; color: #0a1628; }
+  #btn-reservar { background: linear-gradient(180deg, #f5c842 0%, #d4a017 100%); color: #0a1628; box-shadow: 0 4px 14px rgba(212,160,23,0.3); }
   #btn-reservar:disabled { opacity: 0.5; cursor: wait; }
 
   #ok-modal { text-align: center; }
@@ -119,9 +122,25 @@
 <body>
 <div id="app">
   <div id="top-logos">
-    <div>
-      <div id="logo-texto">CAJA DORADA</div>
-      <div id="logo-sub">Ganadores todos los dias</div>
+    <div id="logo-left">
+      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="logo-oro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".45" stop-color="#f5c842"/><stop offset="1" stop-color="#a87908"/></linearGradient>
+          <linearGradient id="logo-gema" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#00d4ff"/><stop offset="1" stop-color="#005f8a"/></linearGradient>
+        </defs>
+        <rect x="4" y="16.5" width="32" height="19.5" rx="3" fill="url(#logo-oro)" stroke="#8a6205" stroke-width=".8"/>
+        <path d="M4 17.5 V12.5 Q4 5 12 5 H28 Q36 5 36 12.5 V17.5 Z" fill="url(#logo-oro)" stroke="#8a6205" stroke-width=".8"/>
+        <path d="M8 10 Q10 7.2 14 7.2 H26" stroke="#fff" stroke-width="1.3" stroke-linecap="round" fill="none" opacity=".6"/>
+        <rect x="4" y="16.5" width="32" height="1.6" fill="#8a6205" opacity=".55"/>
+        <path d="M20 9.2 L23.4 12.6 L20 16 L16.6 12.6 Z" fill="url(#logo-gema)" stroke="#5a3d00" stroke-width=".6"/>
+        <rect x="15.5" y="21" width="9" height="9" rx="2" fill="#8a6205"/>
+        <circle cx="20" cy="24.6" r="1.6" fill="#fff3b0"/>
+        <rect x="19.4" y="25.4" width="1.2" height="2.6" fill="#fff3b0"/>
+      </svg>
+      <div>
+        <div id="logo-texto">CAJA DORADA</div>
+        <div id="logo-sub">Ganadores todos los días</div>
+      </div>
     </div>
     <div id="logo-right">
       <div id="loteria-nombre">Loteria del dia</div>
@@ -135,6 +154,7 @@
     <button class="tab-btn" data-valor="5k">$5.000</button>
     <button class="tab-btn active" data-valor="10k">$10.000</button>
     <button class="tab-btn" data-valor="20k">$20.000</button>
+    <button class="tab-btn" data-valor="50k">$50.000</button>
   </div>
 
   <div id="card">
@@ -242,18 +262,53 @@ function aplicarTema(bgColor) {
   document.getElementById('card').style.background = bgColor;
   document.getElementById('pago-card').style.background = bgColor;
   var tema = TEMAS[bgColor] || TEMAS['#0a1628'];
-  var els = document.querySelectorAll('.premio-mayor-val, .pm-val, #loteria-nombre, .tab-btn.active');
-  for (var i = 0; i < els.length; i++) els[i].style.color = tema.acento;
-  document.getElementById('logo-texto').style.color = tema.secundario;
+  document.documentElement.style.setProperty('--acento', tema.acento);
 }
 
-var CHEST_PAGADO = '<svg viewBox="0 0 40 34" width="26" height="22" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="17" width="34" height="15" rx="2.5" fill="#1a7a3a"/><rect x="3" y="17" width="34" height="6" rx="1" fill="#25a050"/><path d="M3 16 Q3 4 5 4 H35 Q37 4 37 16 Q37 10 20 10 Q3 10 3 16Z" fill="#3dbd6e"/><rect x="3" y="4" width="34" height="12" rx="2.5" fill="#2db560"/><rect x="15" y="14" width="10" height="8" rx="2" fill="#0f5225"/><circle cx="20" cy="18" r="1.5" fill="#a8f0c0"/></svg>';
+// Cofre abierto con monedas de oro; el numero queda visible en la placa
+var COFRE_COLORES = {
+  pagado:    { claro: '#2fc46f', oscuro: '#0d6b36', tapa: '#138a47', placa1: '#5ee49a', placa2: '#27b366', borde: '#0b5a2d' },
+  pendiente: { claro: '#f2b72a', oscuro: '#a36a00', tapa: '#c98a06', placa1: '#ffd966', placa2: '#e8a512', borde: '#7a4f00' },
+  // Para la imagen que se comparte: todos iguales, no muestra quien pago
+  madera:    { claro: '#a8672e', oscuro: '#5a3212', tapa: '#7a4519', placa1: '#ffe27a', placa2: '#d9a21b', borde: '#6b4300' }
+};
+
+function cofreSvg(num, estado) {
+  var c = COFRE_COLORES[estado] || COFRE_COLORES.pendiente;
+  var id = 'cf' + estado;
+  var n = String(num).padStart(2, '0');
+  var moneda = function(x, y, r) {
+    return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#' + id + 'm)" stroke="#a87908" stroke-width=".7"/>';
+  };
+  return '<svg viewBox="0 0 40 40" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c.claro + '"/><stop offset="1" stop-color="' + c.oscuro + '"/></linearGradient>' +
+      '<linearGradient id="' + id + 't" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c.tapa + '"/><stop offset="1" stop-color="' + c.oscuro + '"/></linearGradient>' +
+      '<linearGradient id="' + id + 'p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c.placa1 + '"/><stop offset="1" stop-color="' + c.placa2 + '"/></linearGradient>' +
+      '<radialGradient id="' + id + 'm" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fff6c2"/><stop offset=".55" stop-color="#f5c842"/><stop offset="1" stop-color="#c9970e"/></radialGradient>' +
+      '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".5" stop-color="#f5c842"/><stop offset="1" stop-color="#b8860b"/></linearGradient>' +
+    '</defs>' +
+    '<ellipse cx="20" cy="37" rx="15" ry="1.8" fill="#000" opacity=".15"/>' +
+    '<path d="M5 15 L8 3.5 Q20 1 32 3.5 L35 15 Z" fill="url(#' + id + 't)"/>' +
+    '<path d="M8 3.5 Q20 1 32 3.5" stroke="#f5c842" stroke-width="1.6" fill="none"/>' +
+    moneda(11, 14.5, 3.6) + moneda(17, 13, 3.8) + moneda(23.5, 13.5, 3.8) + moneda(29, 14.8, 3.4) + moneda(14, 11, 3.2) + moneda(20.5, 10, 3.4) + moneda(26.5, 11.2, 3) +
+    '<path d="M33 6 l.8 1.8 1.8.8-1.8.8-.8 1.8-.8-1.8-1.8-.8 1.8-.8z" fill="#fff"/>' +
+    '<path d="M7 8 l.6 1.3 1.3.6-1.3.6-.6 1.3-.6-1.3-1.3-.6 1.3-.6z" fill="#fff" opacity=".9"/>' +
+    '<rect x="4" y="16" width="32" height="20" rx="2.5" fill="url(#' + id + 'b)"/>' +
+    '<rect x="3.2" y="15.5" width="33.6" height="3" rx="1.2" fill="url(#' + id + 'g)"/>' +
+    '<rect x="8" y="19.4" width="24" height="15.6" rx="3" fill="url(#' + id + 'p)" stroke="#f5c842" stroke-width="1.1"/>' +
+    '<rect x="9.6" y="20.5" width="20.8" height="2.4" rx="1.2" fill="#fff" opacity=".25"/>' +
+    '<text x="20" y="32.2" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#fff" stroke="' + c.borde + '" stroke-width="1.8" paint-order="stroke" stroke-linejoin="round">' + n + '</text>' +
+    '</svg>';
+}
 
 var PREMIOS = {
   '5k':  { mayor: "$250.000",   p1: "$25.000",  p2: "$25.000",  p3: "$25.000" },
   '10k': { mayor: "$500.000",   p1: "$50.000",  p2: "$50.000",  p3: "$50.000" },
-  '20k': { mayor: "$1.000.000", p1: "$100.000", p2: "$100.000", p3: "$100.000" }
+  '20k': { mayor: "$1.000.000", p1: "$100.000", p2: "$100.000", p3: "$100.000" },
+  '50k': { mayor: "$2.500.000", p1: "$250.000", p2: "$250.000", p3: "$250.000" }
 };
+var VALORES = ['5k', '10k', '20k', '50k'];
 
 var db;
 var refs = {};       // valor -> firebase ref
@@ -303,7 +358,7 @@ function syncGrid(numeros) {
     var dato = numeros[i] || numeros[String(i)];
     if (dato) {
       cell.className = 'num-cell taken';
-      cell.innerHTML = CHEST_PAGADO;
+      cell.innerHTML = cofreSvg(i, 'madera');
       sold++;
     } else {
       cell.className = 'num-cell';
@@ -318,7 +373,7 @@ function onCellClick(num) {
   var cell = document.getElementById('cell-' + num);
   if (!cell || cell.classList.contains('taken') || cell.classList.contains('loading')) return;
   selectedNum = num;
-  document.getElementById('modal-title').textContent = 'Numero ' + String(num).padStart(2, '0');
+  document.getElementById('modal-title').textContent = 'Número ' + String(num).padStart(2, '0');
   document.getElementById('modal-sub').textContent = 'Rifa de $' + valorActual.replace('k', '.000');
   document.getElementById('inp-apodo').value = '';
   document.getElementById('inp-tel').value = '';
@@ -408,7 +463,7 @@ function buscarBoletos() {
   // compara por los ultimos 10 digitos para ignorar formatos con +57, espacios, etc.
   var sufijo = telBuscado.slice(-10);
   var encontrados = [];
-  ['5k', '10k', '20k'].forEach(function(valor) {
+  VALORES.forEach(function(valor) {
     var numeros = dataCache[valor] || {};
     Object.keys(numeros).forEach(function(k) {
       if (k === 'null') return;
@@ -477,7 +532,7 @@ window.addEventListener('load', function() {
     if (snap.val()) aplicarTema(snap.val());
   });
 
-  ['5k', '10k', '20k'].forEach(function(valor) {
+  VALORES.forEach(function(valor) {
     var ref = db.ref('rifas/' + claveTier(valor));
     refs[valor] = ref;
     ref.on('value', function(snap) {
